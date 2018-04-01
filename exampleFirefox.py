@@ -135,33 +135,6 @@ def main():
                 next_page(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
             #Done getting all products
         #Process all prodcuts obtained
-        #Open single product link to get product detail
-        #print(len(products))
-        #注意Openpyxl添加行时.append([])要添加一个list
-        #.append()是添加一个单元格
-        #TODO:size没处理好
-        for productIndex,product in enumerate(products):
-            productsDetailInfoDict = getProductDetail(product['link'])
-            #process sku size
-            skuSizes = productsDetailInfoDict['size']
-            skuSizesCombination = ""
-            #[{}, {'Twin': '$24.95'}, {'Twin XL': '$24.95'}, {'Full': '$25.95'}, {'Queen': '$26.95'}, {'King': '$34.95'}, {'California King': '$34.95'}] 
-            # BUG-会出现{},是哪里抓取出问题了吗
-            if len(skuSizes) != 0:
-                for index,skuSizeDict in enumerate(skuSizes):
-                    if bool(skuSizeDict):#如果不是空字典
-                        key = list(skuSizeDict)[0]
-                        value = skuSizeDict[key]
-                        maxIndex = len(skuSizes)-1
-                    if index < maxIndex:#最后一个不用加/
-                        skuSizesCombination += key+":"+value+'/'
-                    else:
-                        skuSizesCombination += key+":"+value
-            #print(skuSizesCombination)
-            #ws.append([product['title'],skuSizesCombination, productsDetailInfoDict['starRank'],productsDetailInfoDict['reviewCount'],productsDetailInfoDict['imageLink'],product['link']])
-            ws.append([product['title'],skuSizesCombination, productsDetailInfoDict['starRank'],productsDetailInfoDict['imageLink'],product['link']])
-            print('Saved',productIndex)
-            #print(productsDetailInfoDict)
         #重置products
         products = []
         wb.save("sample.xlsx")
@@ -175,100 +148,97 @@ def main():
 #-------------Test---------------
 #'NoneType' object has no attribute 'get_text'
 #出现在这个getProductDetail()函数里
-def getProductDetail(productLink):
-    try:
-        #BUG:速度是不是会很慢如果用了很多的find_all() 
-        browser.get(productLink) 
-        html = browser.page_source
-        soup = BeautifulSoup(html, 'lxml') 
-        
-            """try:
-                soup.find('span',id='priceblock_ourprice').get_text() 
-            except AttributeError:
-                print("price our error")"""
-            """try:
-            soup.find('span',id='priceblock_dealprice').get_text()
-            except AttributeError:
-                print("deal price error")"""
-            
-            #print(sizes)
-            #print(key,price)
-            #BUG-Fixed不能在这里退出浏览器 不然不能搜其他的产品连接了
-            #browser.quit()
-        #Get star rank
-        starTag = soup.find('i',class_="a-icon a-icon-star a-star-4-5")
-        #找评论和Q&A一起的div
-        #starTag = soup.find('div',id='averageCustomerReviews')#.find('span',id='acrPopover')
-        #starRank = starTag.span['title']
-        starRank = starTag.span.get_text()
-        #此处的get_text不会引 'NoneType' object has no attribute 'get_text'
-        #old way
-        try:
-            starRank = starTag.span.get_text()
-        except AttributeError:
-            print("star tag error")
-        #print("star:",starRank)
-        #有两个地方会显示评分而且这两个一样 所以用find就够了
-        #此处的get_text不会引 'NoneType' object has no attribute 'get_text'
-        reviewTag = soup.find('span',id = 'acrCustomerReviewText')
-        #reviewTag = soup.find('div',id='averageCustomerReviews').find('span',id='acrCustomerReviewText')
-        reviewCount = reviewTag.span.get_text()
-        #old ways
-        try:
-            reviewCount = reviewTag.span.get_text()
-        except AttributeError:
-            print("reivew tag error")
-        #print(reviewCount)
-        #Get Q&A 
-        #此处的get_text不会引 'NoneType' object has no attribute 'get_text'
-        #TODO：测试
-        #修改下find div->tag1->attr
-        #这样限制范围是不是会提速
-        answeredQuestionTag = soup.find('a', id="askATFLink")
-        try:
-            answeredQuestionCount = answeredQuestionTag.span.get_text().strip()
-        except AttributeError:
-            print("Answer tag error")    
-        #print(answeredQuestionCount)
-        #print(sizes)
-        return {'size':sizes,'price':price,'starRank':starRank,'reviewCount':reviewCount,'imageLink':imageLinks[0]}
-        #test
-        #return {'size':sizes,'price':price,'starRank':starRank,'imageLink':imageLinks[0]}
-    except Exception as e:
-        print('getProDeatil', e)
-
+def getProductDetail(productURL):
+    #BUG:速度是不是会很慢如果用了很多的find_all() 
+    browser.get(productURL) 
+    html = browser.page_source
+    soup = BeautifulSoup(html, 'lxml')
+    #product info
+    sizes = getAll_Size_PriceForEachSKU(soup,productURL)
+    reviewCount = getReviewCount(soup)
+    mainImageURL = getMainImageLinks
+    starRank = getStarRank(soup)
+    return {'size':sizes,'starRank':starRank,'reviewCount':reviewCount,'imageLink':mainImageURL}
 
 def getMainImageLinks(soup):
     #主图
+    #目前无法提取未显示的image tag，但是说不定以后可以 所以imageLinks的type先设为[]
     imageLinks = []
     #BUG-不知道如何提取hidden的itemNo-去Stack Overflow上问了
     #难怪各种方式提取 都只有一个li tag被提取出来
     imageTags = soup.find_all('li',class_=re.compile(r'itemNo'))
     for image in imageTags:
         imageLinks.append(image.img['src'])
-    return imageLinks
+    return imageLinks[0]
     
-def getPriceForEachSKU(soup):
+def getAll_Size_PriceForEachSKU(soup,productURL):
     #BUG-Fixed为什么(r'size_name_')而不是(r'size_name_\b+')因为是\d+不是\b+
-    sizeTags = soup.find_all('li',id=re.compile(r'size_name_\d+'))
+    sizeNames = soup.find_all('li',id=re.compile(r'size_name_\d+'))
     #每个SKU的价格
     #Get all sizes
-    sizes = [{}]
-    for size in sizeTags:
-        key = str.replace(size['title'],'Click to select ','')
-        skuLink = 'https://www.amazon.com'+size['data-dp-url']
-        if skuLink == 'https://www.amazon.com':
-            skuLink = productLink
-        #open new tab in browser to get the price
-        browser.get(skuLink)
+    size_price_SKU_list = [{}]
+    for size_name in sizeNames:
+        key = str.replace(size_name['title'],'Click to select ','')
+        skuURL = 'https://www.amazon.com'+size_name['data-dp-url']
+        if skuURL == 'https://www.amazon.com':
+            skuURL = productURL
+        #open new tab in browser to get single SKU price
+        browser.get(skuURL)
         html = browser.page_source
         soup = BeautifulSoup(html, 'lxml')
-        #选中价格时那这个价格就是这一页的价格 因为skulink提取出来是""
+        #选中价格时那这个价格就是这一页的价格 因为skuURL提取出来是""
         #如果价格是那种有折扣的话 id = "priceblock_dealprice"
-        #此处的两个get_text不会引 'NoneType' object has no attribute 'get_text' double checked
-        price = soup.find('span',id='priceblock_ourprice').span.get_text() if soup.find('span',id='priceblock_ourprice') else soup.find('span',id='priceblock_dealprice').span.get_text()
-        #print(price) 
-        sizes.append({key:price})
+        price = soup.find('span',id='priceblock_ourprice').get_text() if soup.find('span',id='priceblock_ourprice') else soup.find('span',id='priceblock_dealprice').get_text()
+        size_price_SKU_list.append({key:price})
+    return size_price_SKU_list
+
+def combine_all_size_price(size_price_SKU_list):
+    all_size_prices = size_price_SKU_list
+    all_size_prices_combined_string = ""
+    # BUG-会出现{},是哪里抓取出问题了吗
+    #[{}, {'Twin': '$24.95'}, {'Twin XL': '$24.95'}, {'Full': '$25.95'}, {'Queen': '$26.95'}, {'King': '$34.95'}, {'California King': '$34.95'}] 
+    #如果这个产品有size这个feature 有的产品只有颜色可选
+    #TODO:考虑下如果这个产品只有颜色该怎么办
+    if len(all_size_prices) != 0:
+        for index,singleSKU_size_price in enumerate(all_size_prices):
+            if bool(singleSKU_size_price):#如果不是空字典
+                #测试过可以将{'Twin': '$24.95'}变成['Twin']
+                key = list(singleSKU_size_price)[0]
+                value = singleSKU_size_price[key]
+                maxIndex = len(all_size_prices)-1
+            if index < maxIndex:#最后一个不用加/
+                all_size_prices_combined_string += key+":"+value+'/'
+            else:
+                all_size_prices_combined_string += key+":"+value
+    return all_size_prices_combined_string
+
+def getStarRank(soup):
+    #有两个地方会显示评分而且这两个一样 所以用find就够了
+    starRankTag = soup.find('i',class_="a-icon a-icon-star a-star-4-5")
+    starRank = starRankTag.span.get_text()
+    #TODO：测试-不知道下面的会不会有速度的提升
+    #修改下find div->tag1->attr
+    #这样限制范围来寻找是不是会提速
+    #starRankTag = soup.find('div',id='averageCustomerReviews').find('span',id='acrPopover')
+    #starRankTag = starTag.span.span['title']
+
+    #Debug tool
+    """try:
+            starRank = starTag.span.get_text()
+        except AttributeError:
+            print("star tag error")"""
+    return starRank
+
+def getReviewCount(soup):
+    reviewCountTag = soup.find('span',id = 'acrCustomerReviewText')
+    reviewCount = reviewCountTag.get_text()
+    return reviewCount
+
+def getAnsweredQuestionCount(soup):
+    answeredQuestionCountTag = soup.find('a', id="askATFLink")
+    answeredQuestionCount = answeredQuestionCountTag.span.get_text().strip()
+    return answeredQuestionCount
+
 #-------------End--------------------  
 #BUG-有的界面没有那个九宫格显示模式，怎么强制切换。
 #TODO:添加一个处理总时间
@@ -279,3 +249,7 @@ if __name__ == '__main__':
 
 
 #BUG-出错啦 Message: Timeout loading page after 300000ms
+#BUG-Fixed不能在这里退出浏览器 不然不能搜其他的产品连接了
+#browser.quit()
+#注意Openpyxl添加行时.append([])要添加一个list
+#.append()是添加一个单元格
