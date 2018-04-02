@@ -113,7 +113,7 @@ def main():
         global products
         # keywords to search
         #keywords = ['queen mattress protector','king mattress protector','waterproof mattress pad']
-        keywords = ['mattress protector']
+        keywords = ['sheets']
         for (keyword,sheetx) in zip(keywords,range(1,999)):
             global products
             # one keyword per sheet
@@ -215,7 +215,15 @@ def getAll_Size_PriceForEachSKU(soup,productURL):
             soup = BeautifulSoup(html, 'lxml')
             #选中价格时那这个价格就是这一页的价格 因为skuURL提取出来是""
             #如果价格是那种有折扣的话 id = "priceblock_dealprice"
-            price = soup.find('span',id='priceblock_ourprice').get_text() if soup.find('span',id='priceblock_ourprice') else soup.find('span',id='priceblock_dealprice').get_text()
+            
+            #Get price
+            if soup.find('span',id='priceblock_ourprice'):
+                price = soup.find('span',id='priceblock_ourprice').get_text() 
+            elif soup.find('span',id='priceblock_dealprice'):
+                price = soup.find('span',id='priceblock_dealprice')
+            else:#如果缺货的话页面上就不会显示价格 find也就不会有匹配到的price
+                price = "缺货"
+
             size_price_SKU_list.append({key:price})
         return size_price_SKU_list
     except Exception as err:
