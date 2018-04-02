@@ -147,6 +147,18 @@ def saveToExcel(products,keyword):
             productURL = product['link']
             #print("link:",productURL)
             productDetail = getProductDetail(productURL)
+            #Test
+            #err:
+            #Get product detail failed: 'NoneType' object has no attribute 'get_text'
+            #Save failed: 'NoneType' object is not subscriptable
+            
+            print("title:",product['title'])
+            print('star rank:',productDetail['starRank'])
+            print('review count:',productDetail['reviewCount'])
+            print('combined:',productDetail['combine_all_size_priceString']) 
+            print('image link:',productDetail['imageLink'])
+            print('product link:',product['link']) 
+            #---------------
             productDataNeedToSave = [product['title'],productDetail['starRank'],productDetail['reviewCount'],productDetail['combine_all_size_priceString'],productDetail['imageLink'],product['link']]
             wb[keyword].append(productDataNeedToSave)
         wb.save("sample.xlsx")
@@ -209,30 +221,39 @@ def getAll_Size_PriceForEachSKU(soup,productURL):
         print('Get All Size Price For Each SKU failed:', err) 
 
 def combine_all_size_price(size_price_SKU_list):
-    all_size_prices = size_price_SKU_list
-    all_size_prices_combined_string = ""
-    # BUG-会出现{},是哪里抓取出问题了吗
-    #[{}, {'Twin': '$24.95'}, {'Twin XL': '$24.95'}, {'Full': '$25.95'}, {'Queen': '$26.95'}, {'King': '$34.95'}, {'California King': '$34.95'}] 
-    #如果这个产品有size这个feature 有的产品只有颜色可选
-    #TODO:考虑下如果这个产品只有颜色该怎么办
-    if len(all_size_prices) != 0:
-        for index,singleSKU_size_price in enumerate(all_size_prices):
-            if bool(singleSKU_size_price):#如果不是空字典
-                #测试过可以将{'Twin': '$24.95'}变成['Twin']
-                key = list(singleSKU_size_price)[0]
-                value = singleSKU_size_price[key]
-                maxIndex = len(all_size_prices)-1
-                if index < maxIndex:#最后一个不用加/
-                    all_size_prices_combined_string += key+":"+value+'/'
-                else:
-                    all_size_prices_combined_string += key+":"+value
-    return all_size_prices_combined_string
+    try:
+        all_size_prices = size_price_SKU_list
+        all_size_prices_combined_string = ""
+        # BUG-会出现{},是哪里抓取出问题了吗
+        #[{}, {'Twin': '$24.95'}, {'Twin XL': '$24.95'}, {'Full': '$25.95'}, {'Queen': '$26.95'}, {'King': '$34.95'}, {'California King': '$34.95'}] 
+        #如果这个产品有size这个feature 有的产品只有颜色可选
+        #TODO:考虑下如果这个产品只有颜色该怎么办
+        if len(all_size_prices) != 0:
+            for index,singleSKU_size_price in enumerate(all_size_prices):
+                if bool(singleSKU_size_price):#如果不是空字典
+                    #测试过可以将{'Twin': '$24.95'}变成['Twin']
+                    key = list(singleSKU_size_price)[0]
+                    value = singleSKU_size_price[key]
+                    maxIndex = len(all_size_prices)-1
+                    if index < maxIndex:#最后一个不用加/
+                        all_size_prices_combined_string += key+":"+value+'/'
+                    else:
+                        all_size_prices_combined_string += key+":"+value
+        return all_size_prices_combined_string
+    except Exception as err:
+        print("Combine failed", err)
 
 def getStarRank(soup):
     try:
         #有两个地方会显示评分而且这两个一样 所以用find就够了
-        starRankTag = soup.find('i',class_="a-icon a-icon-star a-star-4-5")
-        starRank = starRankTag.span.get_text()
+        #BUG-下面这个产品star rank的class是a-icon a-icon-star a-star-4 而不是a-icon a-icon-star a-star-4-5难怪没有get_text()这个
+        #根据star rank的评分不同这个class 也会不同 2.5颗星的就变成2-5了
+        #ling:https://www.amazon.com/LINENSPA-Premium-Smooth-Mattress-Protector/dp/B00MW50FKG/ref=sr_1_2_sspa?s=bedbath&ie=UTF8&qid=1522623358&sr=1-2-spons&keywords=mattress+protector&psc=1
+        #starRankTag = soup.find('i',class_="a-icon a-icon-star a-star-4-5")
+        #starRank = starRankTag.span.get_text()
+        #Debug
+        starRankTag = soup.find('span',id='acrPopover')
+        starRank = starRankTag['title']
         #TODO：测试-不知道下面的会不会有速度的提升
         #修改下find div->tag1->attr
         #这样限制范围来寻找是不是会提速
@@ -244,14 +265,21 @@ def getStarRank(soup):
     return starRank
 
 def getReviewCount(soup):
-    reviewCountTag = soup.find('span',id = 'acrCustomerReviewText')
-    reviewCount = reviewCountTag.get_text()
-    return reviewCount
+    try:
+        reviewCountTag = soup.find('span',id = 'acrCustomerReviewText')
+        reviewCount = reviewCountTag.get_text()
+        return reviewCount
+    except Exception as err:
+        print("Get Review Count failed", err)
 
 def getAnsweredQuestionCount(soup):
-    answeredQuestionCountTag = soup.find('a', id="askATFLink")
-    answeredQuestionCount = answeredQuestionCountTag.span.get_text().strip()
-    return answeredQuestionCount
+    try:
+        answeredQuestionCountTag = soup.find('a', id="askATFLink")
+        answeredQuestionCount = answeredQuestionCountTag.span.get_text().strip()
+        return answeredQuestionCount
+    except Exception as err:
+        print("Get Q&A failed", err)
+    
 
 #-------------End--------------------  
 #BUG-有的界面没有那个九宫格显示模式，怎么强制切换。
