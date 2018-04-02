@@ -192,6 +192,7 @@ def getMainImageLinks(soup):
         for image in imageTags:
             imageLinks.append(image.img['src'])
         #print("imageLinks",len(imageLinks))
+        #BUG-有的imagelink怎么会有data：什么的
         return imageLinks[0]
     except Exception as err:
         print('Get Main Image Links Failed:', err) 
