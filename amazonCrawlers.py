@@ -18,16 +18,26 @@ import string
 #Time
 from datetime import datetime, date, time
 
-targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
-#browser = webdriver.Firefox()
-#Headless firefox config
-options = Options()
-#options.add_argument('-headless')
-browser = Firefox(executable_path='geckodriver', firefox_options=options)
-wait = WebDriverWait(browser, 10)
-browser.set_window_size(1400, 900)
 
-#Excel part
+targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
+
+#Headless Chrome
+options = webdriver.ChromeOptions()
+options.add_argument('headless')
+# set the window size
+options.add_argument('window-size=1200x600')
+# initialize the driver
+browser = webdriver.Chrome(chrome_options=options)
+
+#Headless Firefox
+"""options = Options()
+options.add_argument('-headless')
+browser = Firefox(executable_path='geckodriver', firefox_options=options)
+browser.set_window_size(1400, 900)"""
+wait = WebDriverWait(browser, 10)
+
+#Excel part 
+#Global variable
 wb = Workbook()
 products = []
 
@@ -398,8 +408,8 @@ def main():
         print("Ends at:",endTime)
         wb.save("sample.xlsx")
     finally:
-        #browser.quit()
-        pass
+        browser.quit()
+        #pass
 #BUG-有的界面没有那个九宫格显示模式，怎么强制切换。
 #TODO:添加一个处理总时
 #TODO:保存一个条目时保存一下
