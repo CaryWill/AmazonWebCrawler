@@ -30,8 +30,8 @@ options.add_argument('window-size=1200x600')
 browser = webdriver.Chrome(chrome_options=options)
 
 #Headless Firefox
-"""options = Options()
-options.add_argument('-headless')
+"""#options = Options()
+#options.add_argument('-headless')
 browser = Firefox(executable_path='geckodriver', firefox_options=options)
 browser.set_window_size(1400, 900)"""
 wait = WebDriverWait(browser, 10)
@@ -335,6 +335,9 @@ def saveRankToExcel(products,pageNumber,keyword):
 #获取并储存第一个广告和自然搜索的位置
 def saveFirstAD_nonAD_rankToExcelIn1stSheet(products,whichKindOfProduct,keyword,keywordIndex):
     try:
+        if len(products) == 0:
+            print('Nothing is catched.')
+            return
         #TODO-优化，不要遍历所有的 找到两个就停止
         """#一个广告和一个自然
         twoProducts = []
@@ -476,11 +479,11 @@ def main():
         #夹棉床笠
         #keywords = ['mattress protector','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
         #keywords = ['sheets']
-        keywords = ['mattress pad','mattress protector','queen mattress pad']
+        keywords = ['mattress protector','queen mattress pad']
         #There are 'fscl' 防水床笠 and 'jmcl' 夹棉床笠 这两个 type
         whichKindOfProduct = 'fscl'
         
-        wb['Sheet'].cell(1,1,startTime)
+        wb['Sheet'].cell(2,1,startTime)
         for (keyword,sheetx) in zip(keywords,range(1,999)):
             global products
             # one keyword per sheet
@@ -490,7 +493,7 @@ def main():
             pageNumber = 1
             search(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
             #Display only the first N pages
-            for pageNumber in range(2, 2):
+            for pageNumber in range(2, 8):
                 next_page(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
             #Done getting data
             #Persist data to excel
