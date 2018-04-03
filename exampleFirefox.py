@@ -15,11 +15,14 @@ from openpyxl import load_workbook
 from openpyxl.compat import range
 from openpyxl.utils import get_column_letter
 import string
+#Time
+from datetime import datetime, date, time
+
 targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
 #browser = webdriver.Firefox()
 #Headless firefox config
 options = Options()
-options.add_argument('-headless')
+#options.add_argument('-headless')
 browser = Firefox(executable_path='geckodriver', firefox_options=options)
 wait = WebDriverWait(browser, 10)
 browser.set_window_size(1400, 900)
@@ -69,17 +72,32 @@ def get_products(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#s-results-list-atf')))
         html = browser.page_source
         soup = BeautifulSoup(html, 'lxml')
+        #result_0是第一个
         content = soup.find_all(attrs={"id": re.compile(r'result_\d+')})
         print("how many result were found:",len(content))
         #获取产品链接
-        #利用图片的父node来提取链接
+        #利用图片的父node来提取Tag a里的链接
+        #而不是所有的result图片都可以用('img', attrs={'class':'s-access-image cfMarker'})提取到
+        #像亚马逊的那种Look for mattress的result就没有s-access-image cfMarker 这个class的img Tag就没有
+        #但是每一个result都要img这个tag而且img这个tag的父tag就是包含链接的那个tag
         urls = []
+        """
+        #BUG-Excel里产品少了一个 最后一个产品没有
+        #how many result were found: 42
+        #url: 41
+        
         productDivs = soup.findAll('img', attrs={'class':'s-access-image cfMarker'})
         #print("links:",len(productDivs))
         for div in productDivs:
             urls.append(div.parent['href'])
+        print("url:",len(urls))"""
+        #因为result_ container第一个a tag就是那个包含link的所以可以从这里入手
+        for div in content:
+            urls.append(div.img.parent['href'])
+        print("urls:",len(urls))
         #如果有搜索结果
         if len(content)!=0:
+            #这里除了问题 url和content数量不一致 导致url少的先结束for loop
             for (item,index,url) in zip(content,range(1,9999),urls):
                 product = {
                     #是那种非产品的缺少s-access-title的，就默认给个title
@@ -89,10 +107,12 @@ def get_products(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting
                     #'rank': getRank(pageNumber,index),#就算有那种AD也是准的，不影响
                     #'image':item.find(class_='s-access-image cfMarker').get('src')
                 }
+                #Generate Rank attr for product
+                turnProductIndexToRank(product,pageNumber)
                 product['link'] = 'https://www.amazon.com'+url if ('Sponsored' in product['title']) else url
                 #print(product['link'])
                 products.append(product)
-                #wb[keyword].append([product['title'],product['rank'],product['link']])
+                print(index," product is processed.")
         else:
             print("No product were found!")
         #print("how many prodcuts:",len(products))
@@ -104,12 +124,12 @@ def saveToExcel(products,keyword):
         for product in products:
             productURL = product['link']
             productDetail = getProductDetail(productURL)
-            #print("title:",product['title'])
-            #print('star rank:',productDetail['starRank'])
-            #print('review count:',productDetail['reviewCount'])
-            #print('combined:',productDetail['combine_all_size_priceString']) 
-            #print('image link:',productDetail['imageLink'])
-            #print('product link:',product['link']) 
+            print("title:",product['title'])
+            print('star rank:',productDetail['starRank'])
+            print('review count:',productDetail['reviewCount'])
+            print('combined:',productDetail['combine_all_size_priceString']) 
+            print('image link:',productDetail['imageLink'])
+            print('product link:',product['link']) 
             productDataNeedToSave = [product['title'],productDetail['starRank'],productDetail['reviewCount'],productDetail['combine_all_size_priceString'],productDetail['imageLink'],product['link']]
             wb[keyword].append(productDataNeedToSave)
         wb.save("sample.xlsx")
@@ -245,7 +265,8 @@ def getAnsweredQuestionCount(soup):
         print("Get Q&A failed", err)
     
 
-def turnProductIndexToRank(products,pageNumber):
+def turnProductIndexToRank(product,pageNumber):
+    #BUG-all rank have the same pageNumber
     #Make the soup
     html = browser.page_source
     soup = BeautifulSoup(html, 'lxml')
@@ -254,25 +275,23 @@ def turnProductIndexToRank(products,pageNumber):
     #如：第1页第20个产品 九宫格模式 那Rank就是(1,6,2)
     if soup.find('div',class_="s-layout-picker s-grid-layout-picker"):
         #TODO:在排行那里的head增加一个九宫格排行
-        for product in products:
-            productIndex = product['index']
-            if productIndex <= 3:
-                product['rank'] = str(pageNumber)+","+"1"+","+str(productIndex)
-            elif productIndex%3 ==0:
-                product['rank'] = str(pageNumber)+","+str(productIndex//3)+","+"3"
-            else:
-                product['rank'] = str(pageNumber)+","+str(productIndex//3 + 1)+","+str(productIndex%3)
+        productIndex = product['index']
+        if productIndex <= 3:
+            product['rank'] = str(pageNumber)+","+"1"+","+str(productIndex)
+        elif productIndex%3 ==0:
+            product['rank'] = str(pageNumber)+","+str(productIndex//3)+","+"3"
+        else:
+            product['rank'] = str(pageNumber)+","+str(productIndex//3 + 1)+","+str(productIndex%3)
     #四宫格-图片模式
     elif soup.find('div',class_='s-layout-picker s-image-layout-picker'):
         #Logic is the same as 九宫格 
-        for product in products:
-            productIndex = product['index']
-            if productIndex <= 3:
-                product['rank'] = str(pageNumber)+","+"1"+","+str(productIndex)
-            elif productIndex%3 ==0:
-                product['rank'] = str(pageNumber)+","+str(productIndex//3)+","+"3"
-            else:
-                product['rank'] =  str(pageNumber)+","+str(productIndex//3 + 1)+","+str(productIndex%3)
+        productIndex = product['index']
+        if productIndex <= 3:
+            product['rank'] = str(pageNumber)+","+"1"+","+str(productIndex)
+        elif productIndex%3 ==0:
+            product['rank'] = str(pageNumber)+","+str(productIndex//3)+","+"3"
+        else:
+            product['rank'] =  str(pageNumber)+","+str(productIndex//3 + 1)+","+str(productIndex%3)
     #剩下的就是列模式了
     #1_列模式可翻页的那种模式
     #如:https://www.amazon.com/s/ref=nb_sb_noss_2?url=search-alias%3Daps&field-keywords=tv&rh=i%3Aaps%2Ck%3Atv&ajr=0
@@ -293,13 +312,12 @@ def turnProductIndexToRank(products,pageNumber):
 #Save Rank to Excel
 def saveRankToExcel(products,pageNumber,keyword):
     try:
-        #Generate Rank attr in product
-        turnProductIndexToRank(products,pageNumber)
         for product in products:
             productTitle = product['title']
             productRank = product['rank']
             wb[keyword].append([productTitle,productRank])
         wb.save("sample.xlsx")
+        print('Saved')
     except Exception as err:
         print('Save Rank failed:', err)   
         wb.save("sample.xlsx")  
@@ -308,10 +326,13 @@ def saveRankToExcel(products,pageNumber,keyword):
 # ["Product Name", "Star Rank","Review Count","SKU price","Main image link","Product Link"] 
 def main1():
     try:
+        startTime = datetime.now()
+        print("Start at:",startTime)
+
         global products
         # keywords to search
         #keywords = ['queen mattress protector','king mattress protector','waterproof mattress pad']
-        keywords = ['sheets']
+        keywords = ['mattress protector']
         for (keyword,sheetx) in zip(keywords,range(1,999)):
             global products
             # one keyword per sheet
@@ -329,9 +350,14 @@ def main1():
             saveToExcel(products,keyword)
         #Process all prodcuts obtained
         #重置products 如果关键词多的话 需要重置
-        products = []
+        #products = []
+        endTime = datetime.now()
+        print("Ends at:",endTime)
+        #TODO:used time
     except Exception as err:
         print('出错啦', err)
+        endTime = datetime.now()
+        print("Ends at:",endTime)
         wb.save("sample.xlsx")
     finally:
         browser.quit()
@@ -339,15 +365,19 @@ def main1():
 # Title with Rank
 def main():
     try:
+        startTime = datetime.now()
+        print("Start at:",startTime)
+
         global products
         # keywords to search
         #keywords = ['queen mattress protector','king mattress protector','waterproof mattress pad']
         #keywords = ['sheets']
-        keywords = ['sleeping bag']
+        keywords = ['mattress pad']
         for (keyword,sheetx) in zip(keywords,range(1,999)):
             global products
             # one keyword per sheet
             ws = wb.create_sheet(title=keyword)
+            ws.append(["Product Name", "Star Rank"])
             #Reset pageNumber when keyword changed
             pageNumber = 1
             search(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
@@ -359,18 +389,23 @@ def main():
             saveRankToExcel(products,pageNumber,keyword)
         #Process all prodcuts obtained
         #重置products 如果关键词多的话 需要重置
-        products = []
+        #products = []
+        endTime = datetime.now()
+        print("Ends at:",endTime)
     except Exception as err:
         print('出错啦', err)
+        endTime = datetime.now()
+        print("Ends at:",endTime)
         wb.save("sample.xlsx")
     finally:
-        browser.quit()
+        #browser.quit()
+        pass
 #BUG-有的界面没有那个九宫格显示模式，怎么强制切换。
 #TODO:添加一个处理总时
 #TODO:保存一个条目时保存一下
 #TODO:'NoneType' object has no attribute 'get_text' 处理下 排查下
 if __name__ == '__main__':
-    main1()
+    main()
 
 
 #BUG-出错啦 Message: Timeout loading page after 300000ms
@@ -383,3 +418,8 @@ if __name__ == '__main__':
 #Not the normal 3 modes
 #Save Rank failed: local variable 'product' referenced before assignment
 #增加进度条 不然不知道是不是卡住了
+#创建Github分支不要直接在Main分支操作
+
+#非正常的3行模式product的提取方式也不一样
+
+#BUG-EXCEL结果和网页不一样排序
