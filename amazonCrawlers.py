@@ -399,21 +399,11 @@ def saveFirstAD_nonAD_rankToExcelIn1stSheet(products,whichKindOfProduct,keyword,
         #Process data
         if len(ad) != 0:
             targetAdRank = str(ad[0]['rank'])
-            targetAdSize = productType[ad[0]['title']]
-            #如果是广告则末尾还得加"广告"这个词，没有的话得加"自然"
-            if 'Sponsored' in ad[0]['title']:
-                targetAdSize += '广告'
-            else:
-                targetAdSize += '自然'
+            targetAdSize = productType[ad[0]['title']] + '广告'
         if len(nonAd) != 0:
             targetNonAdRank = str(nonAd[0]['rank'])
-            targetNonAdSize = productType[nonAd[0]['title']]
-            #如果是广告则末尾还得加"广告"这个词，没有的话得加"自然"
-            if 'Sponsored' in ad[0]['title']:
-                targetNonAdSize += '广告'
-            else:
-                targetNonAdSize += '自然'
-        
+            targetNonAdSize = productType[nonAd[0]['title']] + '自然'
+  
         #print("AD",len(ad))
         #print('NonAd',len(nonAd))
         #Unify
@@ -487,7 +477,9 @@ def main():
         #keywords = ['mattress protector','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
         #keywords = ['sheets']
         keywords = ['mattress pad','mattress protector','queen mattress pad']
+        #There are 'fscl' 防水床笠 and 'jmcl' 夹棉床笠 这两个 type
         whichKindOfProduct = 'fscl'
+        
         wb['Sheet'].cell(1,1,startTime)
         for (keyword,sheetx) in zip(keywords,range(1,999)):
             global products
@@ -498,7 +490,7 @@ def main():
             pageNumber = 1
             search(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
             #Display only the first N pages
-            for pageNumber in range(2, 8):
+            for pageNumber in range(2, 2):
                 next_page(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
             #Done getting data
             #Persist data to excel
@@ -508,6 +500,7 @@ def main():
             saveFirstAD_nonAD_rankToExcelIn1stSheet(products,whichKindOfProduct,keyword,keywordIndex)
             #重置products 如果关键词多的话 需要重置
             products = []
+            print("if its 0 then it's reset",len(products))
         endTime = datetime.now()
         print("Ends at:",endTime)
     except Exception as err:
@@ -541,3 +534,4 @@ if __name__ == '__main__':
 #非正常的3行模式product的提取方式也不一样
 
 #BUG-EXCEL结果和网页不一样排序
+#TODO：需要翻8页很浪费 处理下如何在找到2个最靠前的自然位后停止翻页
