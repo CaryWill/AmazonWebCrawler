@@ -332,17 +332,120 @@ def saveRankToExcel(products,pageNumber,keyword):
         print('Save Rank failed:', err)   
         wb.save("sample.xlsx")  
 
+#获取并储存第一个广告和自然搜索的位置
+def saveFirstAD_nonAD_rankToExcelIn1stSheet(products,whichKindOfProduct,keyword,keywordIndex):
+    try:
+        #TODO-优化，不要遍历所有的 找到两个就停止
+        """#一个广告和一个自然
+        twoProducts = []
+        #如果找到了两个就停止loop
+        stopSign = len(twoProducts)
+        if stopSign == 2:
+                print("Two were found,stop searching.")
+                break"""
+        #注意这个部分
+        #亚马逊后台SKU的标题改变的话 这部分字典也要及时修改
+        #防水床笠(fscl首字母缩写)部分
+        fscl = {
+            'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - Twin XL':'TXL',
+            'Waterproof Mattress Cover Protector Pad with 18 Inches Deep Pocket for Full Bed by Maevis,Full Size':'F',
+            'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - Queen':'Q',
+            'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - King':'K',
+            'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - California King':'CK'
+        }
+        #夹棉床笠部分
+        jmcl = {
+            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Twin)':'T',
+            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Twin XL)':'TXL',
+            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Full)':'F',
+            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Queen)':'Q',
+            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, King)':'K',
+            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, California King)':'CK'
+        }
+        """#26
+        numberAlphabetMapping = {
+            '1':'A','2':'B','3':'C','4':'D','5':'E',
+            '6':'F','7':'G','8':'H','9':'I','10':'J',
+            '11':'K','12':'L','13':'M','14':'N','15':'O',
+            '16':'P','17':'Q','18':'R','19':'S','20':'T',
+            '21':'U','22':'V','23':'W','24':'X','25':'Y','26':'Z'
+        } """
+        ad = []
+        nonAd = []
+        targetAdRank = ''
+        targetAdSize = ''
+        targetNonAdRank = ''
+        targetNonAdSize = ''
+        productType = {}
+        unifiedRankAndSize = ''
+        #先找到自己的产品
+        #寻找第一个广告和自然搜索的位置
+        if whichKindOfProduct == 'fscl':
+            productType = fscl
+        if whichKindOfProduct == 'jmcl':
+            productType = jmcl
+        print('product type:',productType)
+        for product in products:
+            #Identify and sort our products
+            #Identify
+            if product['title'] in list(productType):
+                print("product title:",product['title'])
+                #Sort the products to ad and non-ad
+                if "Sponsored" in product['title']:
+                    ad.append(product)
+                else:
+                    nonAd.append(product)
+       
+        #Process data
+        if len(ad) != 0:
+            targetAdRank = str(ad[0]['rank'])
+            targetAdSize = productType[ad[0]['title']]
+            #如果是广告则末尾还得加"广告"这个词，没有的话得加"自然"
+            if 'Sponsored' in ad[0]['title']:
+                targetAdSize += '广告'
+            else:
+                targetAdSize += '自然'
+        if len(nonAd) != 0:
+            targetNonAdRank = str(nonAd[0]['rank'])
+            targetNonAdSize = productType[nonAd[0]['title']]
+            #如果是广告则末尾还得加"广告"这个词，没有的话得加"自然"
+            if 'Sponsored' in ad[0]['title']:
+                targetNonAdSize += '广告'
+            else:
+                targetNonAdSize += '自然'
+        
+        #print("AD",len(ad))
+        #print('NonAd',len(nonAd))
+        #Unify
+        unifiedRankAndSize = targetAdRank+'('+targetAdSize+')'+'/'+targetNonAdRank+'('+targetNonAdSize+')'
+        print("unifyied Rank",unifiedRankAndSize)
+        if unifiedRankAndSize == "()/()":
+            unifiedRankAndSize = '大于8页'
+        #Because the first cell is occupied by today's date
+        rankRow = 2
+        rankColoum = keywordIndex+1
+        keywordRow = 1
+        keywordColoum = rankColoum
+        #keyword title cell
+        wb['Sheet'].cell(keywordRow,keywordColoum,keyword)
+        #keyword rank cell
+        wb['Sheet'].cell(rankRow,rankColoum,unifiedRankAndSize)
+        wb.save("sample.xlsx")
+        return unifiedRankAndSize
+    except Exception as err:
+        print('Save to 1st sheet failed:', err)   
+        wb.save("sample.xlsx") 
+
 # 获取并储存如下信息
 # ["Product Name", "Star Rank","Review Count","SKU price","Main image link","Product Link"] 
-def main1():
+def mainToGetProdcutDetails():
     try:
         startTime = datetime.now()
         print("Start at:",startTime)
 
         global products
         # keywords to search
-        #keywords = ['queen mattress protector','king mattress protector','waterproof mattress pad']
-        keywords = ['mattress protector']
+        keywords = ['mattress protector','queen mattress pad']
         for (keyword,sheetx) in zip(keywords,range(1,999)):
             global products
             # one keyword per sheet
@@ -380,9 +483,12 @@ def main():
 
         global products
         # keywords to search
-        #keywords = ['queen mattress protector','king mattress protector','waterproof mattress pad']
+        #夹棉床笠
+        #keywords = ['mattress protector','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
         #keywords = ['sheets']
-        keywords = ['mattress pad']
+        keywords = ['mattress pad','mattress protector','queen mattress pad']
+        whichKindOfProduct = 'fscl'
+        wb['Sheet'].cell(1,1,startTime)
         for (keyword,sheetx) in zip(keywords,range(1,999)):
             global products
             # one keyword per sheet
@@ -392,14 +498,16 @@ def main():
             pageNumber = 1
             search(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
             #Display only the first N pages
-            for pageNumber in range(2, 2):
+            for pageNumber in range(2, 8):
                 next_page(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
             #Done getting data
             #Persist data to excel
             saveRankToExcel(products,pageNumber,keyword)
-        #Process all prodcuts obtained
-        #重置products 如果关键词多的话 需要重置
-        #products = []
+            #Process all prodcuts obtained
+            keywordIndex = sheetx
+            saveFirstAD_nonAD_rankToExcelIn1stSheet(products,whichKindOfProduct,keyword,keywordIndex)
+            #重置products 如果关键词多的话 需要重置
+            products = []
         endTime = datetime.now()
         print("Ends at:",endTime)
     except Exception as err:
