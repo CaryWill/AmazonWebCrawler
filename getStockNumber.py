@@ -29,7 +29,7 @@ from amazonCrawlers import getProductDetail
 
 #Headless Chrome
 options = webdriver.ChromeOptions()
-#options.add_argument('headless')
+options.add_argument('headless')
 options.add_argument('window-size=1200x600')
 browser = webdriver.Chrome(chrome_options=options)
 #Headless Firefox
@@ -48,7 +48,7 @@ def getStockNumber(newReleaseURL,products):
         print('Program start at:',date)
         wb = Workbook()
         ws = wb.active
-        ws.append(['Date','Order','Title','Inventory','Alert Message'])
+        ws.append(['Date','Order','Title','Star Rank','Review Count','QNA Count','Main Image Link','SKU Link','Inventory','Alert Message'])
         browser.get(newReleaseURL)
         wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR,'#zg_centerListWrapper')))
         html = browser.page_source
@@ -82,6 +82,7 @@ def getStockNumber(newReleaseURL,products):
             #product = products[index-1]
             print('index:',index)
             # 产品详情页
+            print('link:',product['link'])
             browser.get(product['link']) 
             html = browser.page_source
             soup = BeautifulSoup(html, 'lxml')
@@ -131,7 +132,6 @@ def getStockNumber(newReleaseURL,products):
             product['inventoryAlertMessage'] = alertMessageText
             # 清除库存
             emptyCart = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,".sc-action-delete > span:nth-child(1) > input:nth-child(1)")))
-            #emptyCart = browser.find_element_by_css_selector(".sc-action-delete > span:nth-child(1) > input:nth-child(1)")
             emptyCart.click()
         # Save to excel
         save(products,ws,wb,str(date)+'.xlsx')
@@ -162,11 +162,12 @@ def save(products,ws,wb,wbName):
         # Manual 
         #product = products[index-1]
         # If you want more of the product
-        #productInfo = getProductDetail(product['link'])
+        productInfo = getProductDetail(product['link'])
         # Just title and inventory
-        ws.append([datetime.now(),index,product['title'],product['inventory']])
+        #ws.append([datetime.now(),index,product['title'],product['inventory']])
+        # added inventory alert message
         #ws.append([datetime.now(),index,product['title'],product['inventory'],product['inventoryAlertMessage']])
-        #ws.append([product['title'],productInfo['starRank'],product['inventory']])
+        ws.append([datetime.now(),index,product['title'],productInfo['starRank'],productInfo['reviewCount'],productInfo['QNA'],productInfo['imageLink'],product['link'],product['inventory'],product['alertMessageText']])
     wb.save(wbName)
 
 def main():

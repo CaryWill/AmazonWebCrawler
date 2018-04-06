@@ -182,7 +182,10 @@ def getProductDetail(productURL):
         mainImageURL = getMainImageLinks(soup)
         starRank = getStarRank(soup)
         combine_all_size_priceString = combine_all_size_price(sizes)
-        return {'size':sizes,'starRank':starRank,'reviewCount':reviewCount,'imageLink':mainImageURL,'combine_all_size_priceString':combine_all_size_priceString}
+        QNA = getAnsweredQuestionCount(soup)
+        print('Done getting one.')
+        # Return attrs which are added later
+        return {'size':sizes,'starRank':starRank,'reviewCount':reviewCount,'imageLink':mainImageURL,'combine_all_size_priceString':combine_all_size_priceString,'QNA':QNA}
     except Exception as err:
         print('Get product detail failed:', err)
 
@@ -284,7 +287,7 @@ def getStarRank(soup):
         #starRank = starRankTag.span.get_text()
         #Debug
         starRankTag = soup.find('span',id='acrPopover')
-        starRank = starRankTag['title']
+        starRank = starRankTag['title'] if starRankTag else "No star rank."
         #TODO：测试-不知道下面的会不会有速度的提升
         #修改下find div->tag1->attr
         #这样限制范围来寻找是不是会提速
@@ -298,7 +301,7 @@ def getStarRank(soup):
 def getReviewCount(soup):
     try:
         reviewCountTag = soup.find('span',id = 'acrCustomerReviewText')
-        reviewCount = reviewCountTag.get_text()
+        reviewCount = reviewCountTag.get_text() if reviewCountTag else "No review count."
         return reviewCount
     except Exception as err:
         print("Get Review Count failed", err)
@@ -306,7 +309,8 @@ def getReviewCount(soup):
 def getAnsweredQuestionCount(soup):
     try:
         answeredQuestionCountTag = soup.find('a', id="askATFLink")
-        answeredQuestionCount = answeredQuestionCountTag.span.get_text().strip()
+        # If it's a new release product it may not have Q&A
+        answeredQuestionCount = answeredQuestionCountTag.span.get_text().strip() if answeredQuestionCountTag else "No Q&A."
         return answeredQuestionCount
     except Exception as err:
         print("Get Q&A failed", err)
@@ -561,7 +565,11 @@ def main():
 #TODO:保存一个条目时保存一下
 #TODO:'NoneType' object has no attribute 'get_text' 处理下 排查下
 if __name__ == '__main__':
-    getAllImageFromProduct()
+    browser.get('https://www.amazon.com/dp/B0798ZB93M/ref=twister_B07BW3P2Y8?_encoding=UTF8&psc=1')
+    html = browser.page_source
+    soup = BeautifulSoup(html,'lxml')
+    count = getAnsweredQuestionCount(soup)
+    print("how many qna", count)
 
 
 #BUG-出错啦 Message: Timeout loading page after 300000ms
