@@ -41,10 +41,14 @@ wait = WebDriverWait(browser, 10)
 
 def getStockNumber(newReleaseURL,products):
     try:
+        # Program starts
+        start = time.time()
+
         date = datetime.now()
+        print('Program start at:',date)
         wb = Workbook()
         ws = wb.active
-        ws.append(['Date','Order','Title','Inventory'])
+        ws.append(['Date','Order','Title','Inventory','Alert Message'])
         browser.get(newReleaseURL)
         wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR,'#zg_centerListWrapper')))
         html = browser.page_source
@@ -65,6 +69,9 @@ def getStockNumber(newReleaseURL,products):
             # Read up to 9 (10 products)
             if index == 9:
                 break
+            """# Test
+            if index == 1:
+                break"""
             #print(product)
         # Get stock number
         # Automatic from 1-10
@@ -105,27 +112,46 @@ def getStockNumber(newReleaseURL,products):
             time.sleep(3)
             # Get stock number from alert message if stock number is less than 999
             quantityInput = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/input')
-            browser.get_screenshot_as_file(str(index)+'.png') 
+            # If you wanna get a screenshot
+            #browser.get_screenshot_as_file(str(index)+'.png') 
             inventory = quantityInput.get_attribute('value')
             print("how many:",inventory)
             # Add inventory attr to product
             product['inventory'] = inventory
+            # Alert message
+            alertMessage = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div[1]/div/div/div/span')
+            alertMessageText = alertMessage.text
+            product['inventoryAlertMessage'] = alertMessageText 
             # 清除库存
             emptyCart = browser.find_element_by_css_selector(".sc-action-delete > span:nth-child(1) > input:nth-child(1)")
             emptyCart.click()
         # Save to excel
         save(products,ws,wb,str(date)+'.xlsx')
+        # Time used
+        end = time.time()
+        date = datetime.now()
+        print("Ends at:",date)
+        elapsed = end - start
+        print("Used:",elapsed,'s')
     except Exception as err:
         print(err)
         print('库存为0')
         save(products,ws,wb,str(date)+'.xlsx')
+        # Time used
+        end = time.time()
+        date = datetime.now()
+        print("Ends at:",date)
+        elapsed = end - start
+        print("Used:",elapsed)
 
 def save(products,ws,wb,wbName):
+    # If KeyError: 'inventory' happens
+    # Run it again will do
     for index,product in enumerate(products):
         # If you want more of the product
         #productInfo = getProductDetail(product['link'])
         # Just title and inventory
-        ws.append([datetime.now(),index,product['title'],product['inventory']])
+        ws.append([datetime.now(),index,product['title'],product['inventory'],product['inventoryAlertMessage']])
         #ws.append([product['title'],productInfo['starRank'],product['inventory']])
     wb.save(wbName)
 
