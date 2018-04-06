@@ -34,7 +34,7 @@ from amazonCrawlers import getAnsweredQuestionCount
 
 #Headless Chrome
 options = webdriver.ChromeOptions()
-options.add_argument('headless')
+#options.add_argument('headless')
 options.add_argument('window-size=1200x600')
 browser = webdriver.Chrome(chrome_options=options)
 #Headless Firefox
@@ -70,23 +70,23 @@ def getStockNumber(newReleaseURL,products):
             #print(product)
         # TODO: get detail info
         # Get stock number
-        for index,product in enumerate(products):
+        # Automatic from 1-10
+        #for index,product in enumerate(products):
+        # Manual 
+        for index,product in zip(range(8,10),products):
+            product = products[index]
             print('index:',index)
-            for i in range(1,20):
-                # 产品页
-                browser.get(product['SKUURL']) 
-                html = browser.page_source
-                soup = BeautifulSoup(html, 'lxml')
-                #print('current url1:',browser.current_url)
-                #加10个产品 最后就可以不用点击输入数量了
-                # Add to cart 属于产品页
-                addToCard = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,'#add-to-cart-button')))
-                addToCard.click()#this will update brower's current url
-                # Use html = brower.page_source to update the page source
-                #print('current url2:',browser.current_url)
-                print("add:",i)
-                if i == 10:
-                    break
+            # 产品页
+            browser.get(product['SKUURL']) 
+            html = browser.page_source
+            soup = BeautifulSoup(html, 'lxml')
+            #print('current url1:',browser.current_url)
+            #加10个产品 最后就可以不用点击输入数量了
+            # Add to cart 属于产品页
+            addToCard = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,'#add-to-cart-button')))
+            addToCard.click()#this will update brower's current url
+            # Use html = brower.page_source to update the page source
+            #print('current url2:',browser.current_url)
             # Go to my Cart
             html = browser.page_source
             soup = BeautifulSoup(html, 'lxml')
@@ -102,9 +102,9 @@ def getStockNumber(newReleaseURL,products):
             # BUG-不知道如何点击数量的那个按钮|-----|
             #----------------------------|
             # Clear the input field in order to be able to send 999
+            quantity = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/span/select/option[10]').click()
             #browser.execute_script("arguments[0].value = arguments[1]",quantity,"0")
             #quantity = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,".a-input-text")))
-            #quantity.click()
             quantity = browser.find_element_by_css_selector(".a-input-text")
             quantity.clear()
             quantity.send_keys('999')
@@ -112,17 +112,21 @@ def getStockNumber(newReleaseURL,products):
             #BUG-不知如何得到js rendered html
             #browser.refresh()
             #html updated
-            #html = browser.page_source
+            html = browser.page_source
             #text = browser.execute_script("return document.documentElement.innerText")
             #print(text)
             #html = browser.execute_script("return document.documentElement.innerHTML")
-            #soup = BeautifulSoup(html,'lxml')
+            soup = BeautifulSoup(html,'lxml')
             # Get stock number from alert message if stock number is less than 999
-            #productDiv = soup.find('span',id='sc-subtotal-label-activecart')
-            #inStock = productDiv.get_text()
-            #print("how many:",inStock)
+            productDiv = soup.find('span',id='sc-subtotal-label-activecart')
+            inStock = productDiv.get_text()
+            print("how many:",inStock)
+            #enter 999后的反应时间
             time.sleep(3)
             browser.get_screenshot_as_file(str(index)+'.png') 
+            # 清除库存
+            emptyCart = browser.find_element_by_css_selector(".sc-action-delete > span:nth-child(1) > input:nth-child(1)")
+            emptyCart.click()
             if index == 10:
                 break
     except Exception as err:
