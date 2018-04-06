@@ -29,15 +29,22 @@ from amazonCrawlers import getProductDetail
 
 #Headless Chrome
 options = webdriver.ChromeOptions()
-options.add_argument('headless')
+#options.add_argument('headless')
+# Load no image makes it run faster
+prefs = {"profile.managed_default_content_settings.images":2}
+options.add_experimental_option("prefs",prefs)
+# Windows size
 options.add_argument('window-size=1200x600')
 browser = webdriver.Chrome(chrome_options=options)
 wait = WebDriverWait(browser, 10)
 #Headless Firefox
+#BUG:
+#Message: Element <select class="a-native-dropdown a-button-span8" name="quantity"> is not clickable at point(792.2499847412109,243.8000030517578) because another element <span id="a-autoid-0-announce" class="a-button-text a-declarative"> obscures it
 """options = Options()
-options.add_argument('-headless')
+#options.add_argument('-headless')
 browser = Firefox(executable_path='geckodriver', firefox_options=options)
-browser.set_window_size(1400, 900)"""
+browser.set_window_size(1200, 600)
+wait = WebDriverWait(browser, 10)"""
 
 
 def getStockNumber(newReleaseURL,products):
@@ -49,7 +56,6 @@ def getStockNumber(newReleaseURL,products):
         print('Program start at:',date)
         wb = Workbook()
         ws = wb.active
-        ws.append(['Date','Order','Title','Star Rank','Review Count','QNA Count','Main Image Link','SKU Link','Inventory','Alert Message'])
         browser.get(newReleaseURL)
         wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR,'#zg_centerListWrapper')))
         html = browser.page_source
@@ -61,16 +67,16 @@ def getStockNumber(newReleaseURL,products):
             product = {
                 'title': item.img['alt'],
                 'link': 'https://www.amazon.com'+item.a['href'],
-                #Change string to dict
+                # Change string to dict - asin part
                 # '{"ref":"zg_bsnr_10671048011_1","asin":"B079P3DFR4"}' is what we get first
-                'asin': ast.literal_eval(item.div['data-p13n-asin-metadata'])['asin'],
-                'mainImageURL': item.img['src']
+                #'asin': ast.literal_eval(item.div['data-p13n-asin-metadata'])['asin'],
+                #'mainImageURL': item.img['src']
             }
             products.append(product)
-            # Read up to 9 (10 products)
+            # Reads up to 9 (10 products)
             if index == 9:
                 break
-            # Test Run as many times as you can to detect bugs
+            # Test - Run as many times as you can to detect bugs
             """if index == 1:
                 break"""
             #print(product)
@@ -94,10 +100,12 @@ def getStockNumber(newReleaseURL,products):
             cartURL = 'https://www.amazon.com'+soup.find('a',id='nav-cart')['href']
             #print("cart url",cartURL)
             browser.get(cartURL)
+            """ After open new link you need to generate new html and make new soup
+            # Update html
             html = browser.page_source
-            soup = BeautifulSoup(html,'lxml')
+            soup = BeautifulSoup(html,'lxml')"""
             # Remember1:
-            # Like element 'span', it doesn't support click event
+            # Like element 'span' doesn't support click event
             
             # BUG-Fixed不知道如何点击数量的那个按钮
             # 使用Xpath
@@ -111,7 +119,7 @@ def getStockNumber(newReleaseURL,products):
             #BUG-Fixed不知如何得到js rendered html
             #其实js rendered html 可以配合xpath
 
-            #enter 999后的反应时间
+            # 输入999后的页面跳转的反应时间
             time.sleep(3)
             # Get stock number from alert message if stock number is less than 999
             #quantityInput = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/input')
@@ -122,7 +130,6 @@ def getStockNumber(newReleaseURL,products):
             print("how many:",inventory)
             # Add inventory attr to product
             product['inventory'] = inventory
-            #print('Inventory is 999?',inventory)
             # Alert message if have
             if inventory == '999':
                 alertMessageText = "More than 999 in stock"
@@ -144,7 +151,6 @@ def getStockNumber(newReleaseURL,products):
         print("Used:",elapsed,'s')
     except Exception as err:
         print(err)
-        print('库存为0')
         save(products,ws,wb,str(date)+'.xlsx')
         # Time used
         end = time.time()
@@ -157,6 +163,10 @@ def getStockNumber(newReleaseURL,products):
         browser.quit()
 
 def save(products,ws,wb,wbName):
+    # First row (Concise one with only inventory)
+    ws.append(['Date','Order','Title','Inventory','Alert Message']) 
+    # Fisrt row (Detailed one)
+    #ws.append(['Date','Order','Title','Star Rank','Review Count','QNA Count','Main Image Link','SKU Link','Inventory','Alert Message'])
     # If KeyError: 'inventory' happens
     # Run it again will do
     # Auto
@@ -166,12 +176,12 @@ def save(products,ws,wb,wbName):
         # Manual 
         #product = products[index-1]
         # If you want more of the product
-        productInfo = getProductDetail(product['link'])
+        #productInfo = getProductDetail(product['link'])
         # Just title and inventory
-        #ws.append([datetime.now(),index,product['title'],product['inventory']])
+        ws.append([datetime.now(),index,product['title'],product['inventory']])
         # added inventory alert message
         #ws.append([datetime.now(),index,product['title'],product['inventory'],product['inventoryAlertMessage']])
-        ws.append([datetime.now(),index,product['title'],productInfo['starRank'],productInfo['reviewCount'],productInfo['QNA'],productInfo['imageLink'],product['link'],product['inventory'],product['inventoryAlertMessage']])
+        #ws.append([datetime.now(),index,product['title'],productInfo['starRank'],productInfo['reviewCount'],productInfo['QNA'],productInfo['imageLink'],product['link'],product['inventory'],product['inventoryAlertMessage']])
     wb.save(wbName)
 
 def main():

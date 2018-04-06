@@ -31,7 +31,7 @@ wait = WebDriverWait(browser, 10)
 """options = Options()
 options.add_argument('-headless')
 browser = Firefox(executable_path='geckodriver', firefox_options=options)
-browser.set_window_size(1400, 900)
+browser.set_window_size(1200, 600)
 wait = WebDriverWait(browser, 10)"""
 
 #Excel part 
