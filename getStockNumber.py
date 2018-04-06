@@ -28,15 +28,15 @@ from amazonCrawlers import getProductDetail
 #-----Done importing-------#
 
 #Headless Chrome
-options = webdriver.ChromeOptions()
+"""options = webdriver.ChromeOptions()
 options.add_argument('headless')
 options.add_argument('window-size=1200x600')
-browser = webdriver.Chrome(chrome_options=options)
+browser = webdriver.Chrome(chrome_options=options)"""
 #Headless Firefox
-"""options = Options()
-#options.add_argument('-headless')
+options = Options()
+options.add_argument('-headless')
 browser = Firefox(executable_path='geckodriver', firefox_options=options)
-browser.set_window_size(1400, 900)"""
+browser.set_window_size(1400, 900)
 wait = WebDriverWait(browser, 10)
 
 def getStockNumber(newReleaseURL,products):
@@ -151,7 +151,10 @@ def getStockNumber(newReleaseURL,products):
         print("Ends at:",date)
         elapsed = end - start
         print("Used:",elapsed)
-    
+    finally:
+        # Don't forget quitting your browser
+        browser.quit()
+
 def save(products,ws,wb,wbName):
     # If KeyError: 'inventory' happens
     # Run it again will do
@@ -167,7 +170,7 @@ def save(products,ws,wb,wbName):
         #ws.append([datetime.now(),index,product['title'],product['inventory']])
         # added inventory alert message
         #ws.append([datetime.now(),index,product['title'],product['inventory'],product['inventoryAlertMessage']])
-        ws.append([datetime.now(),index,product['title'],productInfo['starRank'],productInfo['reviewCount'],productInfo['QNA'],productInfo['imageLink'],product['link'],product['inventory'],product['alertMessageText']])
+        ws.append([datetime.now(),index,product['title'],productInfo['starRank'],productInfo['reviewCount'],productInfo['QNA'],productInfo['imageLink'],product['link'],product['inventory'],product['inventoryAlertMessage']])
     wb.save(wbName)
 
 def main():
@@ -177,8 +180,6 @@ def main():
         getStockNumber(newReleaseURL,products)
     except Exception as err:
         print('Err on main:',err)
-    finally:
-        # Don't forget quitting your browser
-        browser.quit()
+    
 if __name__ == '__main__':
     main()

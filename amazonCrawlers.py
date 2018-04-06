@@ -22,20 +22,20 @@ from datetime import datetime, date, time
 targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
 
 #Headless Chrome
-options = webdriver.ChromeOptions()
+"""options = webdriver.ChromeOptions()
 #PROXY = ""
 #options.add_argument('headless')
 # set the window size
 options.add_argument('window-size=1200x600')
 #options.add_argument('--proxy-server=%s' % PROXY)
 # initialize the driver
-browser = webdriver.Chrome(chrome_options=options)
+browser = webdriver.Chrome(chrome_options=options)"""
 
 #Headless Firefox
-"""#options = Options()
-#options.add_argument('-headless')
+options = Options()
+options.add_argument('-headless')
 browser = Firefox(executable_path='geckodriver', firefox_options=options)
-browser.set_window_size(1400, 900)"""
+browser.set_window_size(1400, 900)
 wait = WebDriverWait(browser, 10)
 
 #Excel part 
@@ -287,7 +287,10 @@ def getStarRank(soup):
         #starRank = starRankTag.span.get_text()
         #Debug
         starRankTag = soup.find('span',id='acrPopover')
-        starRank = starRankTag['title'] if starRankTag else "No star rank."
+        starRank = starRankTag['title'] if starRankTag else "0"
+        # Compatible with excel 
+        if starRank != '0':
+            starRank = starRank.replace(' out of 5 stars','')
         #TODO：测试-不知道下面的会不会有速度的提升
         #修改下find div->tag1->attr
         #这样限制范围来寻找是不是会提速
@@ -301,7 +304,10 @@ def getStarRank(soup):
 def getReviewCount(soup):
     try:
         reviewCountTag = soup.find('span',id = 'acrCustomerReviewText')
-        reviewCount = reviewCountTag.get_text() if reviewCountTag else "No review count."
+        reviewCount = reviewCountTag.get_text() if reviewCountTag else "0"
+        # Compatible with excel
+        if reviewCount != '0':
+            reviewCount.replace('customer reviews','')
         return reviewCount
     except Exception as err:
         print("Get Review Count failed", err)
@@ -310,7 +316,9 @@ def getAnsweredQuestionCount(soup):
     try:
         answeredQuestionCountTag = soup.find('a', id="askATFLink")
         # If it's a new release product it may not have Q&A
-        answeredQuestionCount = answeredQuestionCountTag.span.get_text().strip() if answeredQuestionCountTag else "No Q&A."
+        answeredQuestionCount = answeredQuestionCountTag.span.get_text().strip() if answeredQuestionCountTag else "0"
+        # Compatible with excel
+        answeredQuestionCount = answeredQuestionCount.replace(' answered questions','')
         return answeredQuestionCount
     except Exception as err:
         print("Get Q&A failed", err)
