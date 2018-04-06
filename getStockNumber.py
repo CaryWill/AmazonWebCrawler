@@ -143,6 +143,7 @@ def getStockNumber(newReleaseURL,products):
         print("Ends at:",date)
         elapsed = end - start
         print("Used:",elapsed)
+    
 
 def save(products,ws,wb,wbName):
     # If KeyError: 'inventory' happens
@@ -156,9 +157,14 @@ def save(products,ws,wb,wbName):
     wb.save(wbName)
 
 def main():
-    products = []
-    newReleaseURL = 'https://www.amazon.com/gp/new-releases/home-garden/10671048011/ref=zg_bs_tab_t_bsnr'
-    getStockNumber(newReleaseURL,products)
-
+    try:
+        products = []
+        newReleaseURL = 'https://www.amazon.com/gp/new-releases/home-garden/10671048011/ref=zg_bs_tab_t_bsnr'
+        getStockNumber(newReleaseURL,products)
+    except Exception as err:
+        print('Err on main:',err)
+    finally:
+        # Don't forget quitting your browser
+        browser.quit()
 if __name__ == '__main__':
     main()

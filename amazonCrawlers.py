@@ -24,7 +24,7 @@ targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
 #Headless Chrome
 options = webdriver.ChromeOptions()
 #PROXY = ""
-options.add_argument('headless')
+#options.add_argument('headless')
 # set the window size
 options.add_argument('window-size=1200x600')
 #options.add_argument('--proxy-server=%s' % PROXY)
@@ -184,7 +184,7 @@ def getProductDetail(productURL):
         combine_all_size_priceString = combine_all_size_price(sizes)
         return {'size':sizes,'starRank':starRank,'reviewCount':reviewCount,'imageLink':mainImageURL,'combine_all_size_priceString':combine_all_size_priceString}
     except Exception as err:
-        print('Get product detail failed:', err) 
+        print('Get product detail failed:', err)
 
 def getMainImageLinks(soup):
     try:
@@ -205,6 +205,19 @@ def getMainImageLinks(soup):
         return imageLinks[0]
     except Exception as err:
         print('Get Main Image Links Failed:', err) 
+
+# Test - Developing
+def getAllImageFromProduct():
+    try:
+        skuURL = 'https://www.amazon.com/ROSECOSE-Luxurious-Lightweight-Comforter-Hypo-allergenic/dp/B078YPBQ8Z/ref=zg_bsnr_10671048011_3?_encoding=UTF8&psc=1&refRID=AF1HPFRBQTEZGB3N96YZ'
+        browser.get(skuURL)
+        imageLinks = []
+        html = browser.page_source
+        soup = BeautifulSoup(html,'lxml')
+        imgs = soup.find_all('li',class_='a-spacing-small item imageThumbnail a-declarative')
+        print('how many imgs were found:',len(imgs))
+    except Exception as err:
+        print('Get all image err:', err)
     
 def getAll_Size_PriceForEachSKU(soup,productURL):
     try:
@@ -494,8 +507,8 @@ def mainToGetProdcutDetails(wbName):
         print("Ends at:",endTime)
         wb.save("sample.xlsx")
     finally:
+        # Don't forget quitting your browser
         browser.quit()
-
 # Title with Rank
 def main():
     try:
@@ -541,14 +554,14 @@ def main():
         print("Ends at:",endTime)
         wb.save("sample.xlsx")
     finally:
-        #browser.quit()
-        pass
+        browser.quit()
+        #pass
 #BUG-有的界面没有那个九宫格显示模式，怎么强制切换。
 #TODO:添加一个处理总时
 #TODO:保存一个条目时保存一下
 #TODO:'NoneType' object has no attribute 'get_text' 处理下 排查下
 if __name__ == '__main__':
-    main()
+    getAllImageFromProduct()
 
 
 #BUG-出错啦 Message: Timeout loading page after 300000ms
