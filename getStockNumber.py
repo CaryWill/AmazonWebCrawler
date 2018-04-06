@@ -41,9 +41,10 @@ wait = WebDriverWait(browser, 10)
 
 def getStockNumber(newReleaseURL,products):
     try:
-        date = datetime.today()
+        date = datetime.now()
         wb = Workbook()
         ws = wb.active
+        ws.append(['Date','Order','Title','Inventory'])
         browser.get(newReleaseURL)
         wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR,'#zg_centerListWrapper')))
         html = browser.page_source
@@ -61,8 +62,8 @@ def getStockNumber(newReleaseURL,products):
                 'mainImageURL': item.img['src']
             }
             products.append(product)
-            # Read up to 10 products 0-9
-            if index == 1:
+            # Read up to 9 (10 products)
+            if index == 9:
                 break
             #print(product)
         # Get stock number
@@ -120,10 +121,12 @@ def getStockNumber(newReleaseURL,products):
         save(products,ws,wb,str(date)+'.xlsx')
 
 def save(products,ws,wb,wbName):
-    for product in products:
+    for index,product in enumerate(products):
         # If you want more of the product
         #productInfo = getProductDetail(product['link'])
-        ws.append([product['title'],product['inventory']])
+        # Just title and inventory
+        ws.append([datetime.now(),index,product['title'],product['inventory']])
+        #ws.append([product['title'],productInfo['starRank'],product['inventory']])
     wb.save(wbName)
 
 def main():
