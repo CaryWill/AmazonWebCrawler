@@ -28,16 +28,17 @@ from amazonCrawlers import getProductDetail
 #-----Done importing-------#
 
 #Headless Chrome
-"""options = webdriver.ChromeOptions()
+options = webdriver.ChromeOptions()
 options.add_argument('headless')
 options.add_argument('window-size=1200x600')
-browser = webdriver.Chrome(chrome_options=options)"""
+browser = webdriver.Chrome(chrome_options=options)
+wait = WebDriverWait(browser, 10)
 #Headless Firefox
-options = Options()
+"""options = Options()
 options.add_argument('-headless')
 browser = Firefox(executable_path='geckodriver', firefox_options=options)
-browser.set_window_size(1400, 900)
-wait = WebDriverWait(browser, 10)
+browser.set_window_size(1400, 900)"""
+
 
 def getStockNumber(newReleaseURL,products):
     try:
@@ -82,7 +83,7 @@ def getStockNumber(newReleaseURL,products):
             #product = products[index-1]
             print('index:',index)
             # 产品详情页
-            print('link:',product['link'])
+            #print('link:',product['link'])
             browser.get(product['link']) 
             html = browser.page_source
             soup = BeautifulSoup(html, 'lxml')

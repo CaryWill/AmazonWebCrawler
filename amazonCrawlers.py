@@ -22,21 +22,17 @@ from datetime import datetime, date, time
 targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
 
 #Headless Chrome
-"""options = webdriver.ChromeOptions()
-#PROXY = ""
-#options.add_argument('headless')
-# set the window size
+options = webdriver.ChromeOptions()
+options.add_argument('headless')
 options.add_argument('window-size=1200x600')
-#options.add_argument('--proxy-server=%s' % PROXY)
-# initialize the driver
-browser = webdriver.Chrome(chrome_options=options)"""
-
+browser = webdriver.Chrome(chrome_options=options)
+wait = WebDriverWait(browser, 10)
 #Headless Firefox
-options = Options()
+"""options = Options()
 options.add_argument('-headless')
 browser = Firefox(executable_path='geckodriver', firefox_options=options)
 browser.set_window_size(1400, 900)
-wait = WebDriverWait(browser, 10)
+wait = WebDriverWait(browser, 10)"""
 
 #Excel part 
 #Global variable
@@ -307,7 +303,7 @@ def getReviewCount(soup):
         reviewCount = reviewCountTag.get_text() if reviewCountTag else "0"
         # Compatible with excel
         if reviewCount != '0':
-            reviewCount.replace('customer reviews','')
+            reviewCount = reviewCount.replace('customer reviews','')
         return reviewCount
     except Exception as err:
         print("Get Review Count failed", err)
