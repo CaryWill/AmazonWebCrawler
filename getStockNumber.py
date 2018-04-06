@@ -73,7 +73,7 @@ def getStockNumber(newReleaseURL,products):
         # Automatic from 1-10
         #for index,product in enumerate(products):
         # Manual 
-        for index,product in zip(range(8,10),products):
+        for index,product in zip(range(7,9),products):
             product = products[index]
             print('index:',index)
             # 产品页
@@ -103,27 +103,20 @@ def getStockNumber(newReleaseURL,products):
             #----------------------------|
             # Clear the input field in order to be able to send 999
             quantity = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/span/select/option[10]').click()
-            #browser.execute_script("arguments[0].value = arguments[1]",quantity,"0")
-            #quantity = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,".a-input-text")))
             quantity = browser.find_element_by_css_selector(".a-input-text")
             quantity.clear()
             quantity.send_keys('999')
             quantity.send_keys(Keys.RETURN)
             #BUG-不知如何得到js rendered html
-            #browser.refresh()
-            #html updated
             html = browser.page_source
-            #text = browser.execute_script("return document.documentElement.innerText")
-            #print(text)
-            #html = browser.execute_script("return document.documentElement.innerHTML")
             soup = BeautifulSoup(html,'lxml')
-            # Get stock number from alert message if stock number is less than 999
-            productDiv = soup.find('span',id='sc-subtotal-label-activecart')
-            inStock = productDiv.get_text()
-            print("how many:",inStock)
             #enter 999后的反应时间
             time.sleep(3)
+            # Get stock number from alert message if stock number is less than 999
+            quantityInput = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/input')
             browser.get_screenshot_as_file(str(index)+'.png') 
+            inStock = quantityInput.get_attribute('value')
+            print("how many:",inStock)
             # 清除库存
             emptyCart = browser.find_element_by_css_selector(".sc-action-delete > span:nth-child(1) > input:nth-child(1)")
             emptyCart.click()
