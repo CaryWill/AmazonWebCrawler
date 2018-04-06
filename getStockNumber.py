@@ -29,7 +29,7 @@ from amazonCrawlers import getProductDetail
 
 #Headless Chrome
 options = webdriver.ChromeOptions()
-options.add_argument('headless')
+#options.add_argument('headless')
 options.add_argument('window-size=1200x600')
 browser = webdriver.Chrome(chrome_options=options)
 #Headless Firefox
@@ -66,26 +66,26 @@ def getStockNumber(newReleaseURL,products):
                 'mainImageURL': item.img['src']
             }
             products.append(product)
-            # Read up to 9 (10 products)
+            """# Read up to 9 (10 products)
             if index == 9:
-                break
-            """# Test
-            if index == 1:
+                break"""
+            # Test Run as many times as you can to detect bugs
+            """if index == 1:
                 break"""
             #print(product)
         # Get stock number
         # Automatic from 1-10
         #for index,product in enumerate(products):
         # Manual 
-        for index,product in enumerate(products):
-            product = products[index]
+        for index,product in zip(range(1,20),products):
+            product = products[index-1]
             print('index:',index)
             # 产品详情页
             browser.get(product['link']) 
             html = browser.page_source
             soup = BeautifulSoup(html, 'lxml')
             # Add to cart 属于产品详情页
-            addToCard = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,'#add-to-cart-button')))
+            addToCard = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,'#add-to-cart-button')))
             addToCard.click()#this will update brower's current url
             # Go to my Cart
             cartURL = 'https://www.amazon.com'+soup.find('a',id='nav-cart')['href']
@@ -99,8 +99,8 @@ def getStockNumber(newReleaseURL,products):
             # BUG-Fixed不知道如何点击数量的那个按钮
             # 使用Xpath
             # Clear the input field in order to be able to send 999
-            quantity = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/span/select/option[10]').click()
-            quantity = browser.find_element_by_css_selector(".a-input-text")
+            quantity = wait.until(EC.element_to_be_clickable((By.XPATH,'/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/span/select/option[10]'))).click()
+            quantity = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,'.a-input-text')))
             quantity.clear()
             quantity.send_keys('999')
             quantity.send_keys(Keys.RETURN)
@@ -111,19 +111,26 @@ def getStockNumber(newReleaseURL,products):
             #enter 999后的反应时间
             time.sleep(3)
             # Get stock number from alert message if stock number is less than 999
-            quantityInput = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/input')
+            #quantityInput = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/input')
+            quantityInput = wait.until(EC.presence_of_element_located((By.XPATH,'/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/input')))
             # If you wanna get a screenshot
             #browser.get_screenshot_as_file(str(index)+'.png') 
-            inventory = quantityInput.get_attribute('value')
+            inventory = quantityInput.get_attribute('value') # Type: str
             print("how many:",inventory)
             # Add inventory attr to product
             product['inventory'] = inventory
-            # Alert message
-            alertMessage = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div[1]/div/div/div/span')
-            alertMessageText = alertMessage.text
-            product['inventoryAlertMessage'] = alertMessageText 
+            #print('Inventory is 999?',inventory)
+            # Alert message if have
+            if inventory == '999':
+                alertMessageText = "More than 999 in stock"
+            else:
+                alertMessage = wait.until(EC.presence_of_element_located((By.XPATH,'/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div[1]/div/div/div/span')))
+                #alertMessage = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div[1]/div/div/div/span')
+                alertMessageText = alertMessage.text
+            product['inventoryAlertMessage'] = alertMessageText
             # 清除库存
-            emptyCart = browser.find_element_by_css_selector(".sc-action-delete > span:nth-child(1) > input:nth-child(1)")
+            emptyCart = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,".sc-action-delete > span:nth-child(1) > input:nth-child(1)")))
+            #emptyCart = browser.find_element_by_css_selector(".sc-action-delete > span:nth-child(1) > input:nth-child(1)")
             emptyCart.click()
         # Save to excel
         save(products,ws,wb,str(date)+'.xlsx')
@@ -144,15 +151,20 @@ def getStockNumber(newReleaseURL,products):
         elapsed = end - start
         print("Used:",elapsed)
     
-
 def save(products,ws,wb,wbName):
     # If KeyError: 'inventory' happens
     # Run it again will do
-    for index,product in enumerate(products):
+    # Auto
+    #for index,product in enumerate(products):
+    # Manual    
+    for index,product in zip(range(1,20),products):
+        # Manual 
+        product = products[index-1]
         # If you want more of the product
         #productInfo = getProductDetail(product['link'])
         # Just title and inventory
-        ws.append([datetime.now(),index,product['title'],product['inventory'],product['inventoryAlertMessage']])
+        ws.append([datetime.now(),index,product['title'],product['inventory']])
+        #ws.append([datetime.now(),index,product['title'],product['inventory'],product['inventoryAlertMessage']])
         #ws.append([product['title'],productInfo['starRank'],product['inventory']])
     wb.save(wbName)
 

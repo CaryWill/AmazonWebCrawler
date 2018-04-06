@@ -211,7 +211,7 @@ def getAllImageFromProduct():
     try:
         skuURL = 'https://www.amazon.com/ROSECOSE-Luxurious-Lightweight-Comforter-Hypo-allergenic/dp/B078YPBQ8Z/ref=zg_bsnr_10671048011_3?_encoding=UTF8&psc=1&refRID=AF1HPFRBQTEZGB3N96YZ'
         browser.get(skuURL)
-        imageLinks = []
+        #imageLinks = []
         html = browser.page_source
         soup = BeautifulSoup(html,'lxml')
         imgs = soup.find_all('li',class_='a-spacing-small item imageThumbnail a-declarative')
