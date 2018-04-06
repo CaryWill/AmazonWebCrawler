@@ -23,9 +23,11 @@ targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
 
 #Headless Chrome
 options = webdriver.ChromeOptions()
+#PROXY = ""
 options.add_argument('headless')
 # set the window size
 options.add_argument('window-size=1200x600')
+#options.add_argument('--proxy-server=%s' % PROXY)
 # initialize the driver
 browser = webdriver.Chrome(chrome_options=options)
 
@@ -275,6 +277,9 @@ def getAnsweredQuestionCount(soup):
         print("Get Q&A failed", err)
     
 
+#BUG-因为selenium和Chrome，firefox等显示的页面不一样，selenium上展示的产品会偏多
+#所以无法判断位置
+#https://www.quora.com/How-come-the-page-source-from-the-webpage-is-different-when-I-view-it-on-Chrome-compared-to-when-Selenium-parses-it
 def turnProductIndexToRank(product,pageNumber):
     #BUG-all rank have the same pageNumber
     #Make the soup
@@ -333,6 +338,7 @@ def saveRankToExcel(products,pageNumber,keyword):
         wb.save("sample.xlsx")  
 
 #获取并储存第一个广告和自然搜索的位置
+#BUG-判断是否是自己的产品时出现了失误
 def saveFirstAD_nonAD_rankToExcelIn1stSheet(products,whichKindOfProduct,keyword,keywordIndex):
     try:
         if len(products) == 0:
@@ -479,10 +485,11 @@ def main():
         #夹棉床笠
         #keywords = ['mattress protector','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
         #keywords = ['sheets']
-        keywords = ['mattress protector','queen mattress pad']
+        #keywords = ['mattress protector','queen mattress pad']
         #There are 'fscl' 防水床笠 and 'jmcl' 夹棉床笠 这两个 type
-        whichKindOfProduct = 'fscl'
-        
+        #whichKindOfProduct = 'fscl'
+        keywords = ['mattress protector']
+        whichKindOfProduct = 'jmcl' 
         wb['Sheet'].cell(2,1,startTime)
         for (keyword,sheetx) in zip(keywords,range(1,999)):
             global products
@@ -512,8 +519,8 @@ def main():
         print("Ends at:",endTime)
         wb.save("sample.xlsx")
     finally:
-        browser.quit()
-        #pass
+        #browser.quit()
+        pass
 #BUG-有的界面没有那个九宫格显示模式，怎么强制切换。
 #TODO:添加一个处理总时
 #TODO:保存一个条目时保存一下
