@@ -66,19 +66,20 @@ def getStockNumber(newReleaseURL,products):
                 'mainImageURL': item.img['src']
             }
             products.append(product)
-            """# Read up to 9 (10 products)
+            # Read up to 9 (10 products)
             if index == 9:
-                break"""
+                break
             # Test Run as many times as you can to detect bugs
             """if index == 1:
                 break"""
             #print(product)
         # Get stock number
         # Automatic from 1-10
-        #for index,product in enumerate(products):
+        for index,product in enumerate(products):
         # Manual 
-        for index,product in zip(range(1,20),products):
-            product = products[index-1]
+        #for index,product in zip(range(20,21),products):
+            # Manual
+            #product = products[index-1]
             print('index:',index)
             # 产品详情页
             browser.get(product['link']) 
@@ -155,11 +156,11 @@ def save(products,ws,wb,wbName):
     # If KeyError: 'inventory' happens
     # Run it again will do
     # Auto
-    #for index,product in enumerate(products):
+    for index,product in enumerate(products):
     # Manual    
-    for index,product in zip(range(1,20),products):
+    #for index,product in zip(range(20,21),products):
         # Manual 
-        product = products[index-1]
+        #product = products[index-1]
         # If you want more of the product
         #productInfo = getProductDetail(product['link'])
         # Just title and inventory
