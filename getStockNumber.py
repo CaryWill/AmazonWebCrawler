@@ -24,17 +24,12 @@ from datetime import datetime, date, time
 import time
 #From amazonCrawlers
 from amazonCrawlers import getProductDetail
-from amazonCrawlers import getMainImageLinks
-from amazonCrawlers import getAll_Size_PriceForEachSKU
-from amazonCrawlers import combine_all_size_price
-from amazonCrawlers import getStarRank
-from amazonCrawlers import getReviewCount
-from amazonCrawlers import getAnsweredQuestionCount
+
 #-----Done importing-------#
 
 #Headless Chrome
 options = webdriver.ChromeOptions()
-#options.add_argument('headless')
+options.add_argument('headless')
 options.add_argument('window-size=1200x600')
 browser = webdriver.Chrome(chrome_options=options)
 #Headless Firefox
@@ -45,8 +40,10 @@ browser.set_window_size(1400, 900)"""
 wait = WebDriverWait(browser, 10)
 
 def getStockNumber(newReleaseURL,products):
-    #Go the the product detail page
     try:
+        date = datetime.today()
+        wb = Workbook()
+        ws = wb.active
         browser.get(newReleaseURL)
         wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR,'#zg_centerListWrapper')))
         html = browser.page_source
@@ -57,39 +54,32 @@ def getStockNumber(newReleaseURL,products):
         for index,item in enumerate(content):
             product = {
                 'title': item.img['alt'],
-                'SKUURL': 'https://www.amazon.com'+item.a['href'],
+                'link': 'https://www.amazon.com'+item.a['href'],
                 #Change string to dict
                 # '{"ref":"zg_bsnr_10671048011_1","asin":"B079P3DFR4"}' is what we get first
                 'asin': ast.literal_eval(item.div['data-p13n-asin-metadata'])['asin'],
                 'mainImageURL': item.img['src']
             }
             products.append(product)
-            # Read up to 10 products
-            if index == 10:
+            # Read up to 10 products 0-9
+            if index == 1:
                 break
             #print(product)
-        # TODO: get detail info
         # Get stock number
         # Automatic from 1-10
         #for index,product in enumerate(products):
         # Manual 
-        for index,product in zip(range(7,9),products):
+        for index,product in enumerate(products):
             product = products[index]
             print('index:',index)
-            # 产品页
-            browser.get(product['SKUURL']) 
+            # 产品详情页
+            browser.get(product['link']) 
             html = browser.page_source
             soup = BeautifulSoup(html, 'lxml')
-            #print('current url1:',browser.current_url)
-            #加10个产品 最后就可以不用点击输入数量了
-            # Add to cart 属于产品页
+            # Add to cart 属于产品详情页
             addToCard = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,'#add-to-cart-button')))
             addToCard.click()#this will update brower's current url
-            # Use html = brower.page_source to update the page source
-            #print('current url2:',browser.current_url)
             # Go to my Cart
-            html = browser.page_source
-            soup = BeautifulSoup(html, 'lxml')
             cartURL = 'https://www.amazon.com'+soup.find('a',id='nav-cart')['href']
             #print("cart url",cartURL)
             browser.get(cartURL)
@@ -97,33 +87,44 @@ def getStockNumber(newReleaseURL,products):
             soup = BeautifulSoup(html,'lxml')
             # Remember1:
             # Like element 'span', it doesn't support click event
-            #----------------------------------|
-            # Make quantity input field visible|
-            # BUG-不知道如何点击数量的那个按钮|-----|
-            #----------------------------|
+            
+            # BUG-Fixed不知道如何点击数量的那个按钮
+            # 使用Xpath
             # Clear the input field in order to be able to send 999
             quantity = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/span/select/option[10]').click()
             quantity = browser.find_element_by_css_selector(".a-input-text")
             quantity.clear()
             quantity.send_keys('999')
             quantity.send_keys(Keys.RETURN)
-            #BUG-不知如何得到js rendered html
-            html = browser.page_source
-            soup = BeautifulSoup(html,'lxml')
+
+            #BUG-Fixed不知如何得到js rendered html
+            #其实js rendered html 可以配合xpath
+
             #enter 999后的反应时间
             time.sleep(3)
             # Get stock number from alert message if stock number is less than 999
             quantityInput = browser.find_element_by_xpath('/html/body/div[1]/div[4]/div/div[4]/div/div[2]/div[4]/form/div[2]/div/div[4]/div/div[3]/div/div/input')
             browser.get_screenshot_as_file(str(index)+'.png') 
-            inStock = quantityInput.get_attribute('value')
-            print("how many:",inStock)
+            inventory = quantityInput.get_attribute('value')
+            print("how many:",inventory)
+            # Add inventory attr to product
+            product['inventory'] = inventory
             # 清除库存
             emptyCart = browser.find_element_by_css_selector(".sc-action-delete > span:nth-child(1) > input:nth-child(1)")
             emptyCart.click()
-            if index == 10:
-                break
+        # Save to excel
+        save(products,ws,wb,str(date)+'.xlsx')
     except Exception as err:
         print(err)
+        print('库存为0')
+        save(products,ws,wb,str(date)+'.xlsx')
+
+def save(products,ws,wb,wbName):
+    for product in products:
+        # If you want more of the product
+        #productInfo = getProductDetail(product['link'])
+        ws.append([product['title'],product['inventory']])
+    wb.save(wbName)
 
 def main():
     products = []

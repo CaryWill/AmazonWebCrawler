@@ -131,7 +131,7 @@ def get_products(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting
     except Exception as err:
         print(err)
 
-def saveToExcel(products,keyword):
+def saveToExcel(products,keyword,wbName):
     try:
         for product in products:
             productURL = product['link']
@@ -144,10 +144,31 @@ def saveToExcel(products,keyword):
             print('product link:',product['link']) 
             productDataNeedToSave = [product['title'],productDetail['starRank'],productDetail['reviewCount'],productDetail['combine_all_size_priceString'],productDetail['imageLink'],product['link']]
             wb[keyword].append(productDataNeedToSave)
-        wb.save("sample.xlsx")
+        wb.save(wbName)
     except Exception as err:
         print('Save failed:', err)
-        wb.save("sample.xlsx") 
+        wb.save(wbName) 
+
+def saveToExcelWithInventory(products,ws,wbName):
+    try:
+        for product in products:
+            productURL = product['link']
+            productDetail = getProductDetail(productURL)
+            """print("title:",product['title'])
+            print('star rank:',productDetail['starRank'])
+            print('review count:',productDetail['reviewCount'])
+            print('combined:',productDetail['combine_all_size_priceString']) 
+            print('image link:',productDetail['imageLink'])
+            print('product link:',product['link']) """
+            #productDataNeedToSave = [product['title'],productDetail['starRank'],productDetail['reviewCount'],productDetail['combine_all_size_priceString'],productDetail['imageLink'],product['link']]
+            # inventory version
+            productDataNeedToSave = [product['title'],productDetail['starRank'],productDetail['reviewCount'],productDetail['combine_all_size_priceString'],productDetail['imageLink'],product['link'],product['inventory']]
+            ws.append(productDataNeedToSave)
+        wb.save(wbName)
+        print('Saved successfully.')
+    except Exception as err:
+        print('Save failed:', err)
+        wb.save(wbName) 
 
 def getProductDetail(productURL):
     try:
@@ -169,6 +190,7 @@ def getMainImageLinks(soup):
     try:
         #主图
         #目前无法提取未显示的image tag，但是说不定以后可以 所以imageLinks的type先设为[]
+        #TODO:是不是可以用xpath来提取
         imageLinks = []
         #BUG-不知道如何提取hidden的itemNo-去Stack Overflow上问了
         #难怪各种方式提取 都只有一个li tag被提取出来
@@ -437,7 +459,7 @@ def saveFirstAD_nonAD_rankToExcelIn1stSheet(products,whichKindOfProduct,keyword,
 
 # 获取并储存如下信息
 # ["Product Name", "Star Rank","Review Count","SKU price","Main image link","Product Link"] 
-def mainToGetProdcutDetails():
+def mainToGetProdcutDetails(wbName):
     try:
         startTime = datetime.now()
         print("Start at:",startTime)
@@ -459,7 +481,7 @@ def mainToGetProdcutDetails():
                 next_page(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
             #Done getting data
             #Persist data to excel
-            saveToExcel(products,keyword)
+            saveToExcel(products,keyword,wbName)
         #Process all prodcuts obtained
         #重置products 如果关键词多的话 需要重置
         #products = []
