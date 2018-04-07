@@ -29,7 +29,7 @@ from amazonCrawlers import getProductDetail
 
 #Headless Chrome
 options = webdriver.ChromeOptions()
-#options.add_argument('headless')
+options.add_argument('headless')
 # Load no image makes it run faster
 prefs = {"profile.managed_default_content_settings.images":2}
 options.add_experimental_option("prefs",prefs)
@@ -74,7 +74,7 @@ def getStockNumber(newReleaseURL,products):
             }
             products.append(product)
             # Reads up to 9 (10 products)
-            if index == 9:
+            if index == 19: # 前20
                 break
             # Test - Run as many times as you can to detect bugs
             """if index == 1:
@@ -83,6 +83,7 @@ def getStockNumber(newReleaseURL,products):
         # Get stock number
         # Automatic from 1-10
         for index,product in enumerate(products):
+        # index starts from 0
         # Manual 
         #for index,product in zip(range(20,21),products):
             # Manual
@@ -164,9 +165,9 @@ def getStockNumber(newReleaseURL,products):
 
 def save(products,ws,wb,wbName):
     # First row (Concise one with only inventory)
-    ws.append(['Date','Order','Title','Inventory','Alert Message']) 
+    #ws.append(['Date','Order','Title','Inventory','Alert Message']) 
     # Fisrt row (Detailed one)
-    #ws.append(['Date','Order','Title','Star Rank','Review Count','QNA Count','Main Image Link','SKU Link','Inventory','Alert Message'])
+    ws.append(['Date','Order','Title','Star Rank','Review Count','QNA Count','Main Image Link','SKU Link','Inventory','Alert Message'])
     # If KeyError: 'inventory' happens
     # Run it again will do
     # Auto
@@ -176,13 +177,17 @@ def save(products,ws,wb,wbName):
         # Manual 
         #product = products[index-1]
         # If you want more of the product
-        #productInfo = getProductDetail(product['link'])
+        productInfo = getProductDetail(product['link'])
         # Just title and inventory
-        ws.append([datetime.now(),index,product['title'],product['inventory']])
+        #ws.append([datetime.now(),index,product['title'],product['inventory']])
         # added inventory alert message
         #ws.append([datetime.now(),index,product['title'],product['inventory'],product['inventoryAlertMessage']])
+        # Default String format Version
         #ws.append([datetime.now(),index,product['title'],productInfo['starRank'],productInfo['reviewCount'],productInfo['QNA'],productInfo['imageLink'],product['link'],product['inventory'],product['inventoryAlertMessage']])
+        # Number format Version
+        ws.append([datetime.now(),index,product['title'],float(productInfo['starRank']),float(productInfo['reviewCount']),float(productInfo['QNA']),productInfo['imageLink'],product['link'],int(product['inventory']),product['inventoryAlertMessage']])
     wb.save(wbName)
+    browser.quit()
 
 def main():
     try:
@@ -191,6 +196,8 @@ def main():
         getStockNumber(newReleaseURL,products)
     except Exception as err:
         print('Err on main:',err)
+    finally:
+        browser.quit()
     
 if __name__ == '__main__':
     main()

@@ -24,6 +24,9 @@ targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
 #Headless Chrome
 options = webdriver.ChromeOptions()
 options.add_argument('headless')
+# Load no image makes it run faster
+prefs = {"profile.managed_default_content_settings.images":2}
+options.add_experimental_option("prefs",prefs)
 options.add_argument('window-size=1200x600')
 browser = webdriver.Chrome(chrome_options=options)
 wait = WebDriverWait(browser, 10)
