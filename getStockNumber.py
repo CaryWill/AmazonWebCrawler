@@ -29,10 +29,10 @@ from amazonCrawlers import getProductDetail
 
 #Headless Chrome
 options = webdriver.ChromeOptions()
-options.add_argument('headless')
-# Load no image makes it run faster
+#options.add_argument('headless')
+# Load no image makes it run faster or you can say load web page faster 
 prefs = {"profile.managed_default_content_settings.images":2}
-options.add_experimental_option("prefs",prefs)
+#options.add_experimental_option("prefs",prefs)
 # Windows size
 options.add_argument('window-size=1200x600')
 browser = webdriver.Chrome(chrome_options=options)
@@ -74,7 +74,7 @@ def getStockNumber(newReleaseURL,products):
             }
             products.append(product)
             # Reads up to 9 (10 products)
-            if index == 19: # 前20
+            if index == 9: # 前10
                 break
             # Test - Run as many times as you can to detect bugs
             """if index == 1:
@@ -177,15 +177,15 @@ def save(products,ws,wb,wbName):
         # Manual 
         #product = products[index-1]
         # If you want more of the product
-        productInfo = getProductDetail(product['link'])
+        #productInfo = getProductDetail(product['link'])
         # Just title and inventory
-        #ws.append([datetime.now(),index,product['title'],product['inventory']])
+        ws.append([datetime.now(),index,product['title'],float(product['inventory'])])
         # added inventory alert message
         #ws.append([datetime.now(),index,product['title'],product['inventory'],product['inventoryAlertMessage']])
         # Default String format Version
         #ws.append([datetime.now(),index,product['title'],productInfo['starRank'],productInfo['reviewCount'],productInfo['QNA'],productInfo['imageLink'],product['link'],product['inventory'],product['inventoryAlertMessage']])
         # Number format Version
-        ws.append([datetime.now(),index,product['title'],float(productInfo['starRank']),float(productInfo['reviewCount']),float(productInfo['QNA']),productInfo['imageLink'],product['link'],int(product['inventory']),product['inventoryAlertMessage']])
+        #ws.append([datetime.now(),index,product['title'],float(productInfo['starRank']),float(productInfo['reviewCount']),float(productInfo['QNA']),productInfo['imageLink'],product['link'],int(product['inventory']),product['inventoryAlertMessage']])
     wb.save(wbName)
     browser.quit()
 
