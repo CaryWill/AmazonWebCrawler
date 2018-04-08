@@ -17,6 +17,7 @@ from openpyxl.utils import get_column_letter
 import string
 #Time
 from datetime import datetime, date, time
+import time
 
 
 targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
@@ -42,7 +43,7 @@ wait = WebDriverWait(browser, 10)"""
 wb = Workbook()
 products = []
 
-def search(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting):
+def search(keyword,pageNumber):
     print('正在搜索')
     try:
         #美亚
@@ -53,12 +54,12 @@ def search(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting):
             EC.element_to_be_clickable((By.CSS_SELECTOR, '.nav-search-submit > input:nth-child(2)')))
         input.send_keys(keyword)
         submit.click()
-        get_products(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting)
+        get_products(keyword,pageNumber)
     except TimeoutException:
-        return search(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting)
+        return search(keyword,pageNumber)
 
 
-def next_page(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting):
+def next_page(keyword,pageNumber):
     print('正在翻页', pageNumber)
     try:
         wait.until(EC.text_to_be_present_in_element(
@@ -67,12 +68,12 @@ def next_page(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting):
         submit.click()
         wait.until(EC.text_to_be_present_in_element(
             (By.CSS_SELECTOR, '.pagnCur'), str(pageNumber)))
-        get_products(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting)
+        get_products(keyword,pageNumber)
     except TimeoutException:
-        next_page(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting)
+        next_page(keyword,pageNumber)
 
 
-def get_products(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting):
+def get_products(keyword,pageNumber):
     try:
         #切换为3列模式，不然数据是列模式的。
         #condition1:有9宫格按钮
@@ -86,12 +87,15 @@ def get_products(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting
         #result_0是第一个
         content = soup.find_all(attrs={"id": re.compile(r'result_\d+')})
         print("how many result were found:",len(content))
+        if len(content) > 45:
+            print('More than 15 rows.')
+            time.sleep(5)
         #获取产品链接
         #利用图片的父node来提取Tag a里的链接
         #而不是所有的result图片都可以用('img', attrs={'class':'s-access-image cfMarker'})提取到
         #像亚马逊的那种Look for mattress的result就没有s-access-image cfMarker 这个class的img Tag就没有
         #但是每一个result都要img这个tag而且img这个tag的父tag就是包含链接的那个tag
-        urls = []
+        """urls = []"""
         """
         #BUG-Excel里产品少了一个 最后一个产品没有
         #how many result were found: 42
@@ -103,7 +107,7 @@ def get_products(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting
             urls.append(div.parent['href'])
         print("url:",len(urls))"""
         #因为result_ container第一个a tag就是那个包含link的所以可以从这里入手
-        for div in content:
+        """for div in content:
             urls.append(div.img.parent['href'])
         print("urls:",len(urls))
         #如果有搜索结果
@@ -126,7 +130,7 @@ def get_products(keyword,pageNumber,sheetNumber,worksheet,myProductIDForMatcting
                 print(index," product is processed.")
         else:
             print("No product were found!")
-        #print("how many prodcuts:",len(products))
+        #print("how many prodcuts:",len(products))"""
     except Exception as err:
         print(err)
 
@@ -499,13 +503,13 @@ def mainToGetProdcutDetails(wbName):
             ws.append(["Product Name", "Star Rank","Review Count","SKU price","Main image link","Product Link"])
             #Reset pageNumber when keyword changed
             pageNumber = 1
-            search(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
+            search(keyword,pageNumber)
             #Display only the first N pages
             for pageNumber in range(2, 2):
-                next_page(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
+                next_page(keyword,pageNumber)
             #Done getting data
             #Persist data to excel
-            saveToExcel(products,keyword,wbName)
+            #saveToExcel(products,keyword,wbName)
         #Process all prodcuts obtained
         #重置products 如果关键词多的话 需要重置
         #products = []
@@ -516,7 +520,7 @@ def mainToGetProdcutDetails(wbName):
         print('出错啦', err)
         endTime = datetime.now()
         print("Ends at:",endTime)
-        wb.save("sample.xlsx")
+        #wb.save("sample.xlsx")
     finally:
         # Don't forget quitting your browser
         browser.quit()
@@ -529,44 +533,44 @@ def main():
         global products
         # keywords to search
         #夹棉床笠
-        #keywords = ['mattress protector','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
+        keywords = ['mattress protector','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
         #keywords = ['sheets']
         #keywords = ['mattress protector','queen mattress pad']
         #There are 'fscl' 防水床笠 and 'jmcl' 夹棉床笠 这两个 type
         #whichKindOfProduct = 'fscl'
-        keywords = ['mattress protector']
-        whichKindOfProduct = 'jmcl' 
-        wb['Sheet'].cell(2,1,startTime)
+        #keywords = ['mattress protector']
+        #whichKindOfProduct = 'jmcl' 
+        #wb['Sheet'].cell(2,1,startTime)
         for (keyword,sheetx) in zip(keywords,range(1,999)):
-            global products
+            #global products
             # one keyword per sheet
-            ws = wb.create_sheet(title=keyword)
-            ws.append(["Product Name", "Star Rank"])
+            #ws = wb.create_sheet(title=keyword)
+            #ws.append(["Product Name", "Star Rank"])
             #Reset pageNumber when keyword changed
             pageNumber = 1
-            search(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
+            search(keyword,pageNumber)
             #Display only the first N pages
             for pageNumber in range(2, 8):
-                next_page(keyword,pageNumber,sheetx,ws,targetProductNameMatching)
+                next_page(keyword,pageNumber)
             #Done getting data
             #Persist data to excel
-            saveRankToExcel(products,pageNumber,keyword)
+            #saveRankToExcel(products,pageNumber,keyword)
             #Process all prodcuts obtained
-            keywordIndex = sheetx
-            saveFirstAD_nonAD_rankToExcelIn1stSheet(products,whichKindOfProduct,keyword,keywordIndex)
+            #keywordIndex = sheetx
+            #saveFirstAD_nonAD_rankToExcelIn1stSheet(products,whichKindOfProduct,keyword,keywordIndex)
             #重置products 如果关键词多的话 需要重置
-            products = []
-            print("if its 0 then it's reset",len(products))
+            #products = []
+            #print("if its 0 then it's reset",len(products))
         endTime = datetime.now()
         print("Ends at:",endTime)
     except Exception as err:
         print('出错啦', err)
         endTime = datetime.now()
         print("Ends at:",endTime)
-        wb.save("sample.xlsx")
+        #wb.save("sample.xlsx")
     finally:
-        browser.quit()
-        #pass
+        #browser.quit()
+        pass
 #BUG-有的界面没有那个九宫格显示模式，怎么强制切换。
 #TODO:添加一个处理总时
 #TODO:保存一个条目时保存一下
