@@ -23,10 +23,10 @@ targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
 
 #Headless Chrome
 options = webdriver.ChromeOptions()
-options.add_argument('headless')
+"""options.add_argument('headless')
 # Load no image makes it run faster
 prefs = {"profile.managed_default_content_settings.images":2}
-options.add_experimental_option("prefs",prefs)
+options.add_experimental_option("prefs",prefs)"""
 options.add_argument('window-size=1200x600')
 browser = webdriver.Chrome(chrome_options=options)
 wait = WebDriverWait(browser, 10)
@@ -572,11 +572,12 @@ def main():
 #TODO:保存一个条目时保存一下
 #TODO:'NoneType' object has no attribute 'get_text' 处理下 排查下
 if __name__ == '__main__':
-    browser.get('https://www.amazon.com/dp/B0798ZB93M/ref=twister_B07BW3P2Y8?_encoding=UTF8&psc=1')
+    """browser.get('https://www.amazon.com/dp/B0798ZB93M/ref=twister_B07BW3P2Y8?_encoding=UTF8&psc=1')
     html = browser.page_source
     soup = BeautifulSoup(html,'lxml')
     count = getAnsweredQuestionCount(soup)
-    print("how many qna", count)
+    print("how many qna", count)"""
+    main()
 
 
 #BUG-出错啦 Message: Timeout loading page after 300000ms
