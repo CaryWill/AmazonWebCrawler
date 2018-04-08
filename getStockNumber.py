@@ -74,8 +74,8 @@ def getStockNumber(newReleaseURL,products):
             }
             products.append(product)
             # Reads up to 9 (10 products)
-            if index == 9: # 前10
-                break
+            """if index == 19: # 前10
+                break"""
             # Test - Run as many times as you can to detect bugs
             """if index == 1:
                 break"""
@@ -165,9 +165,9 @@ def getStockNumber(newReleaseURL,products):
 
 def save(products,ws,wb,wbName):
     # First row (Concise one with only inventory)
-    #ws.append(['Date','Order','Title','Inventory','Alert Message']) 
+    ws.append(['Date','Order','Title','Inventory','Alert Message']) 
     # Fisrt row (Detailed one)
-    ws.append(['Date','Order','Title','Star Rank','Review Count','QNA Count','Main Image Link','SKU Link','Inventory','Alert Message'])
+    #ws.append(['Date','Order','Title','Star Rank','Review Count','QNA Count','Main Image Link','SKU Link','Inventory','Alert Message'])
     # If KeyError: 'inventory' happens
     # Run it again will do
     # Auto
@@ -179,9 +179,9 @@ def save(products,ws,wb,wbName):
         # If you want more of the product
         #productInfo = getProductDetail(product['link'])
         # Just title and inventory
-        ws.append([datetime.now(),index,product['title'],float(product['inventory'])])
+        #ws.append([datetime.now(),index,product['title'],int(product['inventory'])])
         # added inventory alert message
-        #ws.append([datetime.now(),index,product['title'],product['inventory'],product['inventoryAlertMessage']])
+        ws.append([datetime.now(),index,product['title'],product['inventory'],product['inventoryAlertMessage']])
         # Default String format Version
         #ws.append([datetime.now(),index,product['title'],productInfo['starRank'],productInfo['reviewCount'],productInfo['QNA'],productInfo['imageLink'],product['link'],product['inventory'],product['inventoryAlertMessage']])
         # Number format Version
