@@ -118,7 +118,6 @@ def get_products_title_index(keyword,pageNumber):
 #所以无法判断位置
 #https://www.quora.com/How-come-the-page-source-from-the-webpage-is-different-when-I-view-it-on-Chrome-compared-to-when-Selenium-parses-it
 def turnProductIndexToRank(product,pageNumber):
-    #BUG-all rank have the same pageNumber
     #Make the soup
     html = browser.page_source
     soup = BeautifulSoup(html, 'lxml')
@@ -126,7 +125,6 @@ def turnProductIndexToRank(product,pageNumber):
     # 如果是九宫格和四宫格都有 默认的展示方式就可以了
     if soup.find('div',class_="s-grid-layout-picker"):
         # 选9宫格模式
-
         # 同时有9宫格和4宫格 
         # 都是3列 
         if soup.find('div',class_='s-image-layout-picker'):
@@ -145,6 +143,15 @@ def turnProductIndexToRank(product,pageNumber):
     elif soup.find('div',class_='s-list-layout-picker'):
         if soup.find('div',class_='s-image-layout-picker'):
             product['rank'] =  str(pageNumber)+','+str(productIndex)
+    # 列
+    # https://www.amazon.com/s?field-keywords=sleeping+bag
+    elif not soup.find('div',class_='s-list-layout-picker'):
+        if not soup.find('div',class_='s-image-layout-picker'):
+            if not soup.find('div',class_="s-grid-layout-picker"):
+                if soup.find('span',id='a-autoid-0-announce').get_text() != 'See more':
+                    os.system('say "Maybe it is a coloum mode, please check"')
+                    print("Check please!!!")
+                    product['rank'] =  str(pageNumber)+','+str(productIndex)
     else:
         #2_see more的那种像厕纸一样的中间分页的那种没有翻页的那种列模式
         #如：https://www.amazon.com/gp/vs/buying-guide/sleeping-bag/459108?ie=UTF8&field-keywords=sleeping%20bag&ref_=nb_sb_ss_ime_c_1_9&url=search-alias%3Daps
