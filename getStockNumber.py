@@ -22,8 +22,6 @@ import string
 import ast
 from datetime import datetime, date, time
 import time
-#From amazonCrawlers
-from amazonCrawlers import getProductDetail
 
 #-----Done importing-------#
 

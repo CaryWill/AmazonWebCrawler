@@ -46,7 +46,7 @@ products = []
 def search(keyword,pageNumber):
     print('正在搜索')
     # Start
-    os.system('say "Your program is start it!"')
+    os.system('say "Your program is start it fkuc!"')
     try:
         #美亚
         browser.get('https://www.amazon.com/')
@@ -57,6 +57,8 @@ def search(keyword,pageNumber):
         input.send_keys(keyword)
         submit.click()
         get_products(keyword,pageNumber)
+        # Test to compare pages
+        #time.sleep(100)
     except TimeoutException:
         return search(keyword,pageNumber)
 
@@ -70,12 +72,16 @@ def next_page(keyword,pageNumber):
         submit.click()
         wait.until(EC.text_to_be_present_in_element(
             (By.CSS_SELECTOR, '.pagnCur'), str(pageNumber)))
-        get_products(keyword,pageNumber)
+        get_products_title_index(keyword,pageNumber)
+        """ 位置测试 （测试环境- Google Chrome）
+        # 测试发现 除了广告位会变动外
+        # 自然位的不会变动 一切匹配
+        # 运行正常"""
     except TimeoutException:
         next_page(keyword,pageNumber)
 
 
-def get_products(keyword,pageNumber):
+def get_products_title_index(keyword,pageNumber):
     try:
         # 使用默认的排列
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#s-results-list-atf')))
@@ -101,7 +107,7 @@ def get_products(keyword,pageNumber):
                 #Generate Rank attr for product
                 turnProductIndexToRank(product,pageNumber)
                 products.append(product)
-                print(index+1," product is processed.")
+                #print(index+1," product is processed.")
         else:
             print("No products were found!")
         #print("how many prodcuts:",len(products))"""
@@ -117,32 +123,28 @@ def turnProductIndexToRank(product,pageNumber):
     html = browser.page_source
     soup = BeautifulSoup(html, 'lxml')
 
-    #如果是九宫格
-    #如：第1页第20个产品 九宫格模式 那Rank就是(1,6,2)
-    if soup.find('div',class_="s-layout-picker s-grid-layout-picker"):
-        #TODO:在排行那里的head增加一个九宫格排行
-        productIndex = product['index']
-        if productIndex <= 3:
-            product['rank'] = str(pageNumber)+","+"1"+","+str(productIndex)
-        elif productIndex%3 ==0:
-            product['rank'] = str(pageNumber)+","+str(productIndex//3)+","+"3"
-        else:
-            product['rank'] = str(pageNumber)+","+str(productIndex//3 + 1)+","+str(productIndex%3)
-    #四宫格-图片模式
-    elif soup.find('div',class_='s-layout-picker s-image-layout-picker'):
-        #Logic is the same as 九宫格 
-        productIndex = product['index']
-        if productIndex <= 3:
-            product['rank'] = str(pageNumber)+","+"1"+","+str(productIndex)
-        elif productIndex%3 ==0:
-            product['rank'] = str(pageNumber)+","+str(productIndex//3)+","+"3"
-        else:
-            product['rank'] =  str(pageNumber)+","+str(productIndex//3 + 1)+","+str(productIndex%3)
-    #剩下的就是列模式了
-    #1_列模式可翻页的那种模式
+    # 如果是九宫格和四宫格都有 默认的展示方式就可以了
+    if soup.find('div',class_="s-grid-layout-picker"):
+        # 选9宫格模式
+
+        # 同时有9宫格和4宫格 
+        # 都是3列 
+        if soup.find('div',class_='s-image-layout-picker'):
+            productIndex = product['index']
+            if productIndex <= 3:
+                product['rank'] = str(pageNumber)+","+"1"+","+str(productIndex)
+            # 3的倍数    
+            elif productIndex%3 ==0:
+                product['rank'] = str(pageNumber)+","+str(productIndex/3)+","+"3"
+            else:
+                product['rank'] = str(pageNumber)+","+str(productIndex//3 + 1)+","+str(productIndex%3)
+    # 剩下的就是列模式了
+    # 1_列模式可翻页的那种模式
     #如:https://www.amazon.com/s/ref=nb_sb_noss_2?url=search-alias%3Daps&field-keywords=tv&rh=i%3Aaps%2Ck%3Atv&ajr=0
-    elif soup.find('div',class_='s-layout-picker s-list-layout-picker'):
-        product['rank'] =  str(pageNumber)+','+str(productIndex)
+    # 同时有四格和列
+    elif soup.find('div',class_='s-list-layout-picker'):
+        if soup.find('div',class_='s-image-layout-picker'):
+            product['rank'] =  str(pageNumber)+','+str(productIndex)
     else:
         #2_see more的那种像厕纸一样的中间分页的那种没有翻页的那种列模式
         #如：https://www.amazon.com/gp/vs/buying-guide/sleeping-bag/459108?ie=UTF8&field-keywords=sleeping%20bag&ref_=nb_sb_ss_ime_c_1_9&url=search-alias%3Daps
@@ -283,7 +285,7 @@ def main():
         #keywords = ['mattress protector']
         #whichKindOfProduct = 'jmcl' 
         #wb['Sheet'].cell(2,1,startTime)
-        for (keyword,sheetx) in zip(keywords,range(1,999)):
+        for keyword in keywords:
             #global products
             # one keyword per sheet
             #ws = wb.create_sheet(title=keyword)
@@ -318,11 +320,6 @@ def main():
 #TODO:保存一个条目时保存一下
 #TODO:'NoneType' object has no attribute 'get_text' 处理下 排查下
 if __name__ == '__main__':
-    """browser.get('https://www.amazon.com/dp/B0798ZB93M/ref=twister_B07BW3P2Y8?_encoding=UTF8&psc=1')
-    html = browser.page_source
-    soup = BeautifulSoup(html,'lxml')
-    count = getAnsweredQuestionCount(soup)
-    print("how many qna", count)"""
     main()
 
 
