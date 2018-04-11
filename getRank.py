@@ -207,7 +207,7 @@ def turnProductIndexToRank(product,pageNumber):
 
         # 如果是九宫格和四宫格都有 默认的展示方式就可以了
         if soup.find('div',class_="s-grid-layout-picker"):
-            print("九宫格模式")
+            #print("九宫格模式")
             # 选9宫格模式
             # 同时有9宫格和4宫格 
             # 都是3列 
@@ -224,13 +224,13 @@ def turnProductIndexToRank(product,pageNumber):
             # 如:https://www.amazon.com/s/ref=nb_sb_noss_2?url=search-alias%3Daps&field-keywords=tv&rh=i%3Aaps%2Ck%3Atv&ajr=0
             # 同时有四格和列
         elif soup.find('div',class_='s-list-layout-picker'):
-            print('可转换型列模式')
+            #print('可转换型列模式')
             if soup.find('div',class_='s-image-layout-picker'):
                 product['rank'] =  str(pageNumber)+'.'+str(productIndex)
         # 列
         # https://www.amazon.com/s?field-keywords=sleeping+bag
         elif not soup.find('div',class_='s-list-layout-picker'):
-            print('单纯列模式-没有9宫格或四宫格按钮')
+            #print('单纯列模式-没有9宫格或四宫格按钮')
             if not soup.find('div',class_='s-image-layout-picker'):
                 if not soup.find('div',class_="s-grid-layout-picker"):
                     if soup.find('span',id='pagnNextString'):
@@ -249,6 +249,8 @@ def turnProductIndexToRank(product,pageNumber):
             # Log到Excel的rank那里表示遇到了这种情况
             print("Not the normal 3 modes")
             product['rank'] = "Other mode"
+            # For you to check the error
+            time.sleep(3000)
     except Exception as err:
         print("Convert to rank err:",err)
 
