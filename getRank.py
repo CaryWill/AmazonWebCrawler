@@ -24,29 +24,48 @@ targetProductNameMatching = 'Maevis Bed Waterproof Mattress'
 
 #Headless Chrome
 options = webdriver.ChromeOptions()
-"""options.add_argument('headless')
+#options.add_argument('headless')
 # Load no image makes it run faster
 prefs = {"profile.managed_default_content_settings.images":2}
-options.add_experimental_option("prefs",prefs)"""
-options.add_argument('window-size=1200x600')
+#options.add_experimental_option("prefs",prefs)
+#options.add_argument('window-size=1200x600')
 browser = webdriver.Chrome(chrome_options=options)
 wait = WebDriverWait(browser, 10)
 #Headless Firefox
 """options = Options()
-options.add_argument('-headless')
+#options.add_argument('-headless')
 browser = Firefox(executable_path='geckodriver', firefox_options=options)
 browser.set_window_size(1200, 600)
 wait = WebDriverWait(browser, 10)"""
 
-#Excel part 
-#Global variable
+# 一些全局变量
 wb = Workbook()
 products = []
 adProducts = []
 nonAdProducts = []
 myproduct = []
+# 亚马逊后台SKU的标题改变的话 这部分字典也要及时修改
+# 词典库 用来匹配判断是否是自家产品
+# 防水床笠(fscl首字母缩写)部分
+fscl = {
+                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - Twin XL':'TXL',
+                'Waterproof Mattress Cover Protector Pad with 18 Inches Deep Pocket for Full Bed by Maevis,Full Size':'F',
+                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - Queen':'Q',
+                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - King':'K',
+                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - California King':'CK'
+            }
+#夹棉床笠部分
+jmcl = {
+    'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Twin)':'T',
+    'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Twin XL)':'TXL',
+    'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Full)':'F',
+    'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Queen)':'Q',
+    'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, King)':'K',
+    'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, California King)':'CK'
+}
+
 def search(keyword,pageNumber,productType):
-    print('正在搜索')
+    print('正在搜索 ',keyword)
     # Start
     os.system('say "Your program is start now!"')
     try:
@@ -104,7 +123,6 @@ def get_products_title_index(keyword,pageNumber,productType):
                     'index': index+1,#在一页里的顺位序号，每一页都会变
                     #'rank': getRank(pageNumber,index),#就算有那种AD也是准的，不影响
                 }
-                
                 products.append(product)
                 # Sort product to ad and non-ad
                 identifyAndSortMyProduct(product,productType)
@@ -121,25 +139,7 @@ def get_products_title_index(keyword,pageNumber,productType):
 
 def identifyAndSortMyProduct(product,productType):
     try:
-        #注意这个部分
-        #亚马逊后台SKU的标题改变的话 这部分字典也要及时修改
-        #防水床笠(fscl首字母缩写)部分
-        fscl = {
-                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - Twin XL':'TXL',
-                'Waterproof Mattress Cover Protector Pad with 18 Inches Deep Pocket for Full Bed by Maevis,Full Size':'F',
-                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - Queen':'Q',
-                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - King':'K',
-                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - California King':'CK'
-            }
-        #夹棉床笠部分
-        jmcl = {
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Twin)':'T',
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Twin XL)':'TXL',
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Full)':'F',
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Queen)':'Q',
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, King)':'K',
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, California King)':'CK'
-        }
+        # 分析产品类型
         if productType == 'fscl':
             productType = fscl
         if productType == 'jmcl':
@@ -159,33 +159,17 @@ def identifyAndSortMyProduct(product,productType):
 
 def getThatTwo(productType):
     try:
-        fscl = {
-                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - Twin XL':'TXL',
-                'Waterproof Mattress Cover Protector Pad with 18 Inches Deep Pocket for Full Bed by Maevis,Full Size':'F',
-                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - Queen':'Q',
-                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - King':'K',
-                'Maevis Bed Waterproof Mattress Protector Cover Pad Fitted 18 Inches Deep Pocket Premium Washable Vinyl Free - California King':'CK'
-            }
-            #夹棉床笠部分
-        jmcl = {
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Twin)':'T',
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Twin XL)':'TXL',
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Full)':'F',
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, Queen)':'Q',
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, King)':'K',
-            'Maevis Mattress Pad Cover 100% 300TC Cotton with 8-21 Inch Deep Pocket White Overfilled Bed Mattress Topper (Down Alternative, California King)':'CK'
-        }
         if productType == 'fscl':
             productType = fscl
         if productType == 'jmcl':
             productType = jmcl
-
+        # 临时变量
         targetAdRank = ''
         targetAdAttr = ''
         targetNonAdRank = ''
         targetNonAdAttr = ''
         unifiedRankAndAttr = ''
-
+        # 对最靠前的自然和广告位进行处理
         if len(adProducts) != 0:
             targetAdRank = adProducts[0]['rank']
             # 需要将[Sponsored]移除才能匹配到 
@@ -193,12 +177,12 @@ def getThatTwo(productType):
         if len(nonAdProducts) != 0:
             targetNonAdRank = str(nonAdProducts[0]['rank'])
             targetNonAdAttr = productType[nonAdProducts[0]['title'].strip()] + '自然'
-
+        # 整合
         unifiedRankAndAttr = targetAdRank+'('+targetAdAttr+')'+'/'+targetNonAdRank+'('+targetNonAdAttr+')'
-        #print("unifyied Rank",unifiedRankAndAttr)
+        # 如果在前8页搜不到自家产品则设置为默认位
         if unifiedRankAndAttr == "()/()":
             unifiedRankAndAttr = '大于8页'
-        #获取并储存第一个广告和自然搜索的位置
+        # 打印第一个广告和自然搜索的位置
         print("Two:",unifiedRankAndAttr)
         return unifiedRankAndAttr
     except Exception as err:
@@ -256,12 +240,13 @@ def turnProductIndexToRank(product,pageNumber):
         print("Convert to rank err:",err)
 
 #Save Rank to Excel
-def saveRankToExcel(products,pageNumber,keyword):
+def saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural):
+    # One keyword at a time
     try:
-        for product in products:
-            productTitle = product['title']
-            productRank = product['rank']
-            wb[keyword].append([productTitle,productRank])
+        # 第一个cell是（1，1） 留给日期
+        # keywordIndex 是从0开始所以要+2
+        wb.active.cell(1,keywordIndex+2,keyword)#keywordCell
+        wb.active.cell(2,keywordIndex+2,firstAd_N_firstNatural)#rankCell
         wb.save("sample.xlsx")
         print('Saved')
     except Exception as err:
@@ -271,15 +256,25 @@ def saveRankToExcel(products,pageNumber,keyword):
 # Title with Rank
 def main():
     try:
+        # Some global products
+        global products
+        global nonAdProducts
+        global adProducts
+        # 开始
         startTime = datetime.now()
         print("Start at:",startTime)
-
-        global products
-        # keywords to search
         #keywords = ['mattress protector','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
-        keywords = ['mattress pad']
+        
+        # 自定义参数部分
+        # -----开始-----
+        keywords = ['mattress pad','mattress protector']
         productType = 'jmcl' 
-        for keyword in keywords:
+        # 表格第一列
+        wb.active.cell(1,1,'PC')
+        wb.active.cell(2,1,str(datetime.today()))
+        # -----END------
+
+        for keywordIndex,keyword in enumerate(keywords):
             #Reset pageNumber when keyword changed
             pageNumber = 1
             search(keyword,pageNumber,productType)
@@ -290,13 +285,16 @@ def main():
                     break
                 else:
                     next_page(keyword,pageNumber,productType)
-            #重置products 如果关键词多的话 需要重置
+            # 得到最靠前的一个自然和广告位
+            firstAd_N_firstNatural = getThatTwo(productType)
+            #一个关键词储存一次
+            saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural)
+            # 进行搜索下一个关键词前的准备：
+            # 重置一些全局变量当搜索关键词每次变得时候
             products = []
-            print('ad:',len(adProducts))
-            print('non-ad:',len(nonAdProducts))
-        print(myproduct)
-        #Done getting data
-        getThatTwo(productType)
+            adProducts = []
+            nonAdProducts = []
+        # 结束
         endTime = datetime.now()
         print("Ends at:",endTime)
     except Exception as err:
@@ -323,13 +321,5 @@ if __name__ == '__main__':
 
 #TODO:sleeping bag这种Rank如何计算
 #Not the normal 3 modes
-#Save Rank failed: local variable 'product' referenced before assignment
 #增加进度条 不然不知道是不是卡住了
-#创建Github分支不要直接在Main分支操作
-
 #非正常的3行模式product的提取方式也不一样
-
-#BUG-EXCEL结果和网页不一样排序
-#TODO：需要翻8页很浪费 处理下如何在找到2个最靠前的自然位后停止翻页
-
-#
