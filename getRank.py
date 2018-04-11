@@ -91,13 +91,25 @@ def search(keyword,pageNumber,productType):
 def next_page(keyword,pageNumber,productType):
     print('正在翻页', pageNumber)
     try:
-        wait.until(EC.text_to_be_present_in_element(
-            (By.CSS_SELECTOR, '#pagnNextString'), 'Next Page'))
-        submit = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#pagnNextString')))
-        submit.click()
-        wait.until(EC.text_to_be_present_in_element(
-            (By.CSS_SELECTOR, '.pagnCur'), str(pageNumber)))
+        html = browser.page_source
+        soup = BeautifulSoup(html,'lxml')
+        if soup.find('span',id='pagnNextString'): 
+            wait.until(EC.text_to_be_present_in_element(
+                (By.CSS_SELECTOR, '#pagnNextString'), 'Next Page'))
+            submit = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#pagnNextString')))
+            submit.click()
+            wait.until(EC.text_to_be_present_in_element(
+                (By.CSS_SELECTOR, '.pagnCur'), str(pageNumber)))
+        # TODO:Wants to add support for see more mode
+        # BUG-why 不能用soup.find('span',class_='a-button-text') == 'See more'作为if的条件 
+        elif soup.find('span',class_='a-button-text'):
+            print('See more mode!',soup.find('span',class_='a-button-text').get_text())
+            submit = wait.until(EC.element_to_be_clickable((By.XPATH,'//*[@id="a-autoid-0"]/span/input')))
+            submit.click()
         get_products_title_index(keyword,pageNumber,productType)
+        # BUG-如果在第8页结束前 就没有see more这个按钮 要提前退出 没有next page也要考虑
+        else: 
+            pass
         """ 位置测试 （测试环境- Google Chrome）
         # 测试发现 除了广告位会变动外
         # 自然位的不会变动 一切匹配
@@ -130,6 +142,7 @@ def get_products_title_index(keyword,pageNumber,productType):
                     # 'rank': getRank(pageNumber,index),# 就算有那种AD也是准的，不影响
                 }
                 products.append(product)
+                print(product)
                 # Sort product to ad and non-ad
                 identifyAndSortMyProduct(product,productType)
                 # Generate Rank attr for product
@@ -243,7 +256,6 @@ def turnProductIndexToRank(product,pageNumber):
             # 那么就没有翻页按钮 可以利用这个特点来判断
             # 如：https://www.amazon.com/gp/vs/buying-guide/sleeping-bag/459108?ie=UTF8&field-keywords=sleeping%20bag&ref_=nb_sb_ss_ime_c_1_9&url=search-alias%3Daps
             # TODO: 什么时候解决下
-            # soup.find('span',id='a-autoid-0-announce').get_text() == 'See more':
             # print("See more mode")
             # product['rank'] = "See more mode"
             # Log到Excel的rank那里表示遇到了这种情况
@@ -285,9 +297,10 @@ def main():
         #keywords = ['mattress protector','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
         # keywords = ['mattress pad cover']
         #productType = 'jmcl'
-        keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
+        #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
+        #productType = 'fscl'
+        keywords = ['sleeping bag']
         productType = 'fscl'
-
         # 表格部分-第一列
         wb.active.cell(1,1,'PC')
         wb.active.cell(2,1,str(datetime.today()))
