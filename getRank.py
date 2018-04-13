@@ -93,6 +93,21 @@ def next_page(keyword,pageNumber,productType):
     try:
         html = browser.page_source
         soup = BeautifulSoup(html,'lxml')
+        # 用来判断是否到了最后一页
+        # BUG-如果在第8页结束前 就没有see more这个按钮 要提前退出 没有next page也要考虑
+        # 判断是否到最后一页 （下面一个是最后一页一个不是）
+        # 我发现不是最后一页的话 <span id="pagnNextString"> 这个的parent tag就是一个a tag 其中包含点击下一页后包含的下一页的链接
+        # 所以可以判断如果parent tag是不是a 则到了最后一页
+        # 在最后一页停止
+        last_page_tag = soup.find('span',id='pagnNextString')
+        #print('Type:',last_page_tag.parent.name)
+        if last_page_tag.parent.name != 'a':
+            print('Reach to the last page.') #未显示
+            return 'Reach last page'
+        else:
+            #print('Not the last')
+            pass
+            
         if soup.find('span',id='pagnNextString'): 
             wait.until(EC.text_to_be_present_in_element(
                 (By.CSS_SELECTOR, '#pagnNextString'), 'Next Page'))
@@ -103,46 +118,86 @@ def next_page(keyword,pageNumber,productType):
         # TODO:Wants to add support for see more mode
         # BUG-why 不能用soup.find('span',class_='a-button-text') == 'See more'作为if的条件 
         elif soup.find('span',class_='a-button-text'):
-            print('See more mode!',soup.find('span',class_='a-button-text').get_text())
+            # print('See more mode!',soup.find('span',class_='a-button-text').get_text())
             submit = wait.until(EC.element_to_be_clickable((By.XPATH,'//*[@id="a-autoid-0"]/span/input')))
             submit.click()
+
+        # https://www.amazon.com/s/ref=sr_pg_10?fst=p90x%3A1&rh=n%3A1055398%2Cn%3A1063252%2Cn%3A1063270%2Ck%3Amattress+game&page=10&keywords=mattress+game&ie=UTF8&qid=1523543196
+        # https://www.amazon.com/s/ref=sr_pg_11?fst=p90x%3A1&rh=n%3A1055398%2Cn%3A1063252%2Cn%3A1063270%2Ck%3Amattress+game&page=11&keywords=mattress+game&ie=UTF8&qid=1523543097 
         get_products_title_index(keyword,pageNumber,productType)
-        # BUG-如果在第8页结束前 就没有see more这个按钮 要提前退出 没有next page也要考虑
-        else: 
-            pass
+        
+        return 'More than 8 pages'
+        
         """ 位置测试 （测试环境- Google Chrome）
         # 测试发现 除了广告位会变动外
         # 自然位的不会变动 一切匹配
         # 运行正常"""
     except TimeoutException:
+        print('except')
         next_page(keyword,pageNumber,productType)
 
 # BUG-Fixedstring indices must be integers
 # 因为转换rank前product为[] 什么都没有 
 def get_products_title_index(keyword,pageNumber,productType):
     try:
-        # 使用默认的排列
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#s-results-list-atf')))
         html = browser.page_source
         soup = BeautifulSoup(html, 'lxml')
-        # result_0是第一个
-        content = soup.find_all(attrs={"id": re.compile(r'result_\d+')})
+        # 如果需要点击的时候那么你需要等待页面显示完全 所以如果你不点击的话 完全没必要用注释里的代码
+        """# 如果是三种模式中的一种 那么产品的容器可以搜s-results-list-atf
+        if soup.find('ul',id='s-results-list-atf'):
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#s-results-list-atf')))
+        # 如果是see more的那种
+        if soup.find('ul',id='buying-guide__tabs__content'):
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,'#buying-guide-body-v2 > div.a-section.buying-guide-btf > div.a-section.buying-guide-results__section > div > div.buying-guide-results-inner > div > div')))
+        """
+        content = [] # 为了兼容See more mode
+        # 如果是那三种排列模式 result_0是第一个
+        if soup.find(id=re.compile(r'result_\d+')):
+            content = soup.find_all(attrs={"id": re.compile(r'result_\d+')})
+            #print('normal')
+        # 如果是see more那种模式 
+        elif soup.find('li',class_='buying-guide-search-results-item'):
+            #print('abnormal')
+            content = soup.find_all('li',class_='s-result-item buying-guide-search-results-item')
         print("how many result were found:",len(content))
+        
         # 如果行数超过13行 发出警报
         if len(content) > 45:
             print('More than 15 rows.')
             os.system('say "It is more than 15 rows, you should check if it is a BUG!"')
+        
         # 如果有搜索结果
         if len(content)!=0:
             for index,item in enumerate(content):
-                product = {
-                    # 是那种非产品的缺少s-access-title的，就默认给个title
-                    'title': item.find(class_='s-access-title').get_text() if item.find(class_='s-access-title') else "Amazon recommendation", 
-                    'index': index+1,# 在一页里的顺位序号，每一页都会变
-                    # 'rank': getRank(pageNumber,index),# 就算有那种AD也是准的，不影响
-                }
+                product = {} # 为了兼容See more mode
+                # 如果是那三种排列模式 
+                if soup.find(id=re.compile(r'result_\d+')): 
+                    product = {
+                        # 是那种非产品的缺少s-access-title的，就默认给个title
+                        'title': item.find(class_='s-access-title').get_text() if item.find(class_='s-access-title') else "Amazon recommendation", 
+                        'index': index+1,# 在一页里的顺位序号，每一页都会变
+                        # 'rank': getRank(pageNumber,index),# 就算有那种AD也是准的，不影响
+                    }
+                # Sleep bag的那种see more模式
+                # BUG-每次点击see more按钮 那么content会累加相当于第一页加第二页以此类推
+                elif soup.find('li',class_='buying-guide-search-results-item'): 
+                    product = {
+                        #'title': item.find(class_='vs-carousel-title').get_text() if item.find(class_='vs-carousel-title') else "Amazon recommendation", 
+                        'title': 'See more mode',
+                        'index': index+1,# 在一页里的顺位序号，每一页都会变
+                        # 'rank': getRank(pageNumber,index),# 就算有那种AD也是准的，不影响
+                    } 
+                    print('See more mode is on.')
+                # 其他没见过的模式
+                else:
+                    product = {
+                        'title': 'Other mode!', 
+                        'index': index+1,# 在一页里的顺位序号，每一页都会变
+                        # 'rank': getRank(pageNumber,index),# 就算有那种AD也是准的，不影响
+                    } 
+                    print('I do not recognize this mode, so I can not get the title from the product, please check!')
                 products.append(product)
-                print(product)
+                #print(product)
                 # Sort product to ad and non-ad
                 identifyAndSortMyProduct(product,productType)
                 # Generate Rank attr for product
@@ -165,6 +220,10 @@ def identifyAndSortMyProduct(product,productType):
             productType = fscl
         if productType == 'jmcl':
             productType = jmcl
+        # Get that two err: string indices must be integers (BUG-FIXed)
+        # 新增全局变量时记得这里也要修改
+        if productType == 'yogamat':
+            productType = yogamat
         # Sort products to ad and nonAD
         # Title may contains blank spaces
         for matchKey in list(productType):
@@ -184,6 +243,10 @@ def getThatTwo(productType):
             productType = fscl
         if productType == 'jmcl':
             productType = jmcl
+        # Get that two err: string indices must be integers (BUG-FIXed)
+        # 新增全局变量时记得这里也要修改
+        if productType == 'yogamat':
+            productType = yogamat
         # 临时变量
         targetAdRank = ''
         targetAdAttr = ''
@@ -294,13 +357,16 @@ def main():
         # ----开始----
         # 自定义部分
         # 参数部分
-        #keywords = ['mattress protector','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
-        # keywords = ['mattress pad cover']
-        #productType = 'jmcl'
+        #keywords = ['mattress pad','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
+        productType = 'jmcl'
         #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
+        #keywords = ['waterproof mattress protector']
         #productType = 'fscl'
-        keywords = ['sleeping bag']
-        productType = 'fscl'
+        #keywords = ['yoga mat','yoga mat','yoga','workout mat','fitness mat']
+        #keywords = ['yoga']
+        #keywords = ['tpe yoga mat']
+        #productType = 'yogamat'
+        keywords = ['mattress protector']
         # 表格部分-第一列
         wb.active.cell(1,1,'PC')
         wb.active.cell(2,1,str(datetime.today()))
@@ -316,7 +382,11 @@ def main():
                 if len(adProducts)>=1 and len(nonAdProducts)>=1:
                     break
                 else:
-                    next_page(keyword,pageNumber,productType)
+                    howmanypages = next_page(keyword,pageNumber,productType)
+                # 搜索结果少于8页则提前停止
+                print("Now is page",pageNumber)
+                if howmanypages == 'Reach last page':
+                    break
             # 得到最靠前的一个自然和广告位
             firstAd_N_firstNatural = getThatTwo(productType)
             # 一个关键词储存一次
@@ -329,14 +399,19 @@ def main():
         # 结束
         endTime = datetime.now()
         print("Ends at:",endTime)
+        elapsed = endTime - startTime
+        print("Used:",elapsed)
     except Exception as err:
         print('出错啦', err)
         endTime = datetime.now()
         print("Ends at:",endTime)
         # wb.save("关键词位置统计.xlsx")
+        elapsed = endTime - startTime
+        print("Used:",elapsed)
     finally:
-        # browser.quit()
-        pass
+        browser.quit()
+        # Debug mode
+        #pass
 # BUG-有的界面没有那个九宫格显示模式，怎么强制切换。
 # TODO:添加一个处理总时
 # TODO:保存一个条目时保存一下
