@@ -337,11 +337,11 @@ def saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural):
         # keywordIndex 是从0开始所以要+2
         wb.active.cell(1,keywordIndex+2,keyword)# keywordCell
         wb.active.cell(2,keywordIndex+2,firstAd_N_firstNatural)# rankCell
-        wb.save("关键词位置统计.xlsx")
+        wb.save("关键词位置统计"+datetime.now()+".xlsx")  
         print('Saved')
     except Exception as err:
         print('Save Rank failed:', err)   
-        wb.save("关键词位置统计.xlsx")  
+        wb.save("关键词位置统计"+datetime.now()+".xlsx")  
     
 # Title with Rank
 def main():
