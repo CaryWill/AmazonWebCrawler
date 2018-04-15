@@ -329,6 +329,92 @@ def turnProductIndexToRank(product,pageNumber):
     except Exception as err:
         print("Convert to rank err:",err)
 
+def getBestSellersRank(productURL):
+    startTime = datetime.now()
+    browser.get(productURL)
+    html = browser.page_source
+    soup = BeautifulSoup(html,'lxml')
+    # Get all SKUs basic info
+    SKUs = []
+    contents = []
+    bestSellerRankSequences = []
+    bestSellerRankString = ''
+    if soup.find('li',id=re.compile(r'size_name_\d+')):
+        contents = soup.find_all('li',id=re.compile(r'size_name_\d+'))
+    elif soup.find('li',id=re.compile(r'color_name_\d+')):
+        contents = soup.find_all('li',id=re.compile(r'color_name_\d+')) 
+    else:
+        while True:
+            print('????????')
+    for item in contents:
+        skuURL = 'https://www.amazon.com'+item['data-dp-url']
+        if skuURL == 'https://www.amazon.com':
+                skuURL = productURL
+        sku = {
+            'attr':item['title'].replace('Click to select ',''),
+            'skuURL':skuURL,
+        }
+        SKUs.append(sku)
+    # Iterate All SKUs to get detail info 
+    # get best seller rank
+    for sku in SKUs:
+        browser.get(sku['skuURL'])
+        html = browser.page_source
+        soup = BeautifulSoup(html,'lxml')
+        # 得到细化分类的排名
+        wantedRank = ''
+        # 有2个类目排名的模式 Best Sellers Rank 
+        if soup.find('th',class_='prodDetSectionEntry'):
+            allProdDetSectionEntries = soup.find_all('th',class_='prodDetSectionEntry')
+            for entry in allProdDetSectionEntries:
+                if entry.get_text().strip() == 'Best Sellers Rank':
+                    # rank1
+                    rank1 = entry.parent.td.span.span.get_text().strip()
+                    print('rank1',rank1)
+                    # rank2
+                    # BUG-fixed .next_sibling 因为br的next sibling是 \n所以得call两个
+                    rank2 = entry.parent.td.span.br.next_sibling.next_sibling.get_text().strip()
+                    print('rank2',rank2)
+                    if 'Top 100' in rank1:
+                        # Get rank number in rank2
+                        startIndex = rank2.find('#') 
+                        # 找到第一个in 在第二个rank里面 因为rank1包含top 100 不是我们想要的
+                        endIndex = rank2.find('in')
+                        rankNum = rank2[startIndex:endIndex].replace('#','').strip()
+                        wantedRank = rankNum
+                    elif 'Top 100' in rank2:
+                        # Get rank number in rank1
+                        startIndex = rank1.find('#') 
+                        endIndex = rank1.find('in')
+                        rankNum = rank1[startIndex:endIndex].replace('#','').strip()
+                        wantedRank = rankNum
+                    else:
+                        while True:
+                            print('Two ranks do not contail Top 100')
+                    
+        # 只有一个类目模式的排名 Amazon Best Sellers Rank
+        # BUG-gettext出现很多换行符空白
+        elif soup.find('li',id='SalesRank'):
+            # Top 100 在不是很细的类目下
+            rank = soup.find('li',id='SalesRank').get_text()
+            #print('rank',rank)
+            startIndex = rank.find('#') 
+            endIndex = rank.find('in')
+            rankNum = rank[startIndex:endIndex].replace('#','').strip()
+            wantedRank = rankNum
+        else:
+            while True:
+                print('No rank is found')
+
+        bestSellerRankSequences.append(wantedRank)
+        sku['bestSellerRank'] = wantedRank
+
+    for s in bestSellerRankSequences:
+        bestSellerRankString += (s+'|')
+    print(bestSellerRankString)
+    endTime = datetime.now()
+    print('Used:',endTime-startTime)
+        
 # Save Rank to Excel
 def saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural):
     # One keyword at a time
@@ -337,7 +423,7 @@ def saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural):
         # keywordIndex 是从0开始所以要+2
         wb.active.cell(1,keywordIndex+2,keyword)# keywordCell
         wb.active.cell(2,keywordIndex+2,firstAd_N_firstNatural)# rankCell
-        wb.save("关键词位置统计"+str(datetime.now())+".xlsx")  
+        wb.save("关键词位置统计"+".xlsx")  
         print('Saved')
     except Exception as err:
         print('Save Rank failed:', err)   
@@ -358,15 +444,15 @@ def main():
         # 自定义部分
         # 参数部分
         #keywords = ['mattress pad','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
-        productType = 'jmcl'
+        #productType = 'jmcl'
         #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
         #keywords = ['waterproof mattress protector']
         #productType = 'fscl'
-        #keywords = ['yoga mat','yoga mat','yoga','workout mat','fitness mat']
+        keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
         #keywords = ['yoga']
         #keywords = ['tpe yoga mat']
-        #productType = 'yogamat'
-        keywords = ['mattress pad']
+        productType = 'yogamat'
+        #keywords = ['mattress pad']
         # 表格部分-第一列
         wb.active.cell(1,1,'PC')
         wb.active.cell(2,1,str(datetime.today()))
@@ -417,8 +503,9 @@ def main():
 # TODO:保存一个条目时保存一下
 # TODO:'NoneType' object has no attribute 'get_text' 处理下 排查下
 if __name__ == '__main__':
-    main()
-
+    #main()
+    getBestSellersRank('https://www.amazon.com/BLC-Anti-Tear-lightweight-Anti-slip-Dark-Blue/dp/B071VVVPF3/ref=sr_1_22?ie=UTF8&qid=1523709097&sr=8-22&keywords=tpe+fitness+yoga+mat')
+    
 
 # BUG-出错啦 Message: Timeout loading page after 300000ms
 # BUG-Fixed不能在这里退出浏览器 不然不能搜其他的产品连接了
