@@ -428,6 +428,47 @@ def saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural):
     except Exception as err:
         print('Save Rank failed:', err)   
         wb.save("关键词位置统计"+str(datetime.now())+".xlsx")  
+
+# Manual
+def getFeature_bullets(productURL):
+    browser.get(productURL)
+    html = browser.page_source
+    soup = BeautifulSoup(html,'lxml')
+
+    feature_bullets_tag = soup.find('div',id='feature-bullets')
+    # Could use find_all and find on a Tag
+    bullets = feature_bullets_tag.find_all('li')
+    # Feature bullets li has no attrs so you can use this hint to get feature bullets
+    for li in bullets:
+        if len(li.attrs)==0:
+            print(li)
+
+def getProductDescription(productURL):
+    browser.get(productURL)
+    html = browser.page_source
+    soup = BeautifulSoup(html,'lxml') 
+
+    description_tag = []
+    # Product description without images
+    if soup.find('div',id='productDescription_feature_div'):
+        description_tag = soup.find('div',id='productDescription_feature_div').find('div',id='productDescription')
+    elif soup.find('div',id='dpx-aplus-3p-product-description_feature_div'):
+        description_tag = soup.find_all('div',class_='aplus-module')
+        for t in description_tag:
+            print(t.get_text())
+    else:
+        description_tag = 'Err to get product description'
+        print('Err to get product description')
+    #print(description_tag.get_text())
+    #print(description_tag.string)
+
+# 匹配多值
+def testMuti_valueMatch(productURL):
+    browser.get(productURL)
+    html = browser.page_source
+    soup = BeautifulSoup(html,'lxml') 
+    tagss = soup.select('div.celwidget.aplus-module.3p-module-b')
+    print('many,',len(tagss))
     
 # Title with Rank
 def main():
@@ -504,7 +545,7 @@ def main():
 # TODO:'NoneType' object has no attribute 'get_text' 处理下 排查下
 if __name__ == '__main__':
     #main()
-    getBestSellersRank('https://www.amazon.com/BLC-Anti-Tear-lightweight-Anti-slip-Dark-Blue/dp/B071VVVPF3/ref=sr_1_22?ie=UTF8&qid=1523709097&sr=8-22&keywords=tpe+fitness+yoga+mat')
+    testMuti_valueMatch('https://www.amazon.com/LEISURE-TOWN-Overfilled-Pocket-Cooling-Alternative/dp/B073TZF8BL/ref=sr_1_1_sspa?s=bedbath&ie=UTF8&qid=1523794551&sr=1-1-spons&keywords=mattress+pad&psc=1')
     
 
 # BUG-出错啦 Message: Timeout loading page after 300000ms
