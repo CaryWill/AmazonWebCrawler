@@ -448,6 +448,7 @@ def saveRankToExcelNewFormat(keyword,keywordIndex,firstAd_N_firstNatural):
         wb.active.cell(keywordIndex+3,1,keyword)
         wb.active.cell(keywordIndex+3,2,firstAd_N_firstNatural[0])
         # 广告
+        # TODO: 注意此处加11 可以动态的用len(keywords) 不然关键词多于8个的话 这里就会出现数据覆盖
         wb.active.cell(keywordIndex+11,1,keyword)
         wb.active.cell(keywordIndex+11,2,firstAd_N_firstNatural[1])
     except Exception as err:
@@ -510,8 +511,9 @@ def main():
         # 参数部分
         #keywords = ['mattress pad','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
         #productType = 'jmcl'
-        keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
-        #keywords = ['waterproof mattress protector']
+        #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
+        
+        keywords = ['mattress cover']
         productType = 'fscl'
         #keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
         #keywords = ['yoga mat']
@@ -536,10 +538,7 @@ def main():
             search(keyword,currentPageNumber,productType)
             # Display only the first N pages
             while currentPageNumber < 10:
-                # Get current page number
-                html = browser.page_source
-                soup = BeautifulSoup(html,'lxml')
-                currentPageNumber = int(soup.find('span',class_='pagnCur').get_text()) 
+                print('before turning page:',currentPageNumber) 
                 #print(currentPageNumber)
                 # When to stop turnning page
                 if len(adProducts)>=1 and len(nonAdProducts)>=1:
@@ -547,7 +546,12 @@ def main():
                 else:
                     #print('before curr:',currentPageNumber)
                     howmanypages = next_page(keyword,currentPageNumber+1,productType)
-                    #print('after page:',currentPageNumber)
+                    # Update page number after turnning page
+                    # Update html (html will change after turning page)
+                    html = browser.page_source
+                    soup = BeautifulSoup(html,'lxml')
+                    currentPageNumber = int(soup.find('span',class_='pagnCur').get_text())
+                    #print('after:',currentPageNumber)
                 # 搜索结果少于10页则提前停止
                 if howmanypages == 'Reach last page':
                     break
