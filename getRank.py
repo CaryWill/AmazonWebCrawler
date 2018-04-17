@@ -70,8 +70,10 @@ yogamat = {
     'BLC Anti-Tear TPE Yoga Mat lightweight Anti-slip 6mm Premium Exercise Mat for Yoga Fitness and GYM Workout with Carrying Strap':''
 }
 
-def search(keyword,pageNumber,productType):
+def search(keyword,currentPageNumber,productType):
+    currentPageLink = browser.current_url
     print('正在搜索',keyword)
+    print('第一页')
     # Start
     # os.system('say "Your program is start now!"')
     try:
@@ -83,13 +85,15 @@ def search(keyword,pageNumber,productType):
             EC.element_to_be_clickable((By.CSS_SELECTOR, '.nav-search-submit > input:nth-child(2)')))
         input.send_keys(keyword)
         submit.click()
-        get_products_title_index(keyword,pageNumber,productType)
+        get_products_title_index(keyword,currentPageNumber,productType)
     except TimeoutException:
-        return search(keyword,pageNumber,productType)
+        browser.get(currentPageLink)
+        return search(keyword,currentPageNumber,productType)
 
 
-def next_page(keyword,pageNumber,productType):
-    print('正在翻页', pageNumber)
+def next_page(keyword,currentPageNumber,productType):
+    currentPageLink = browser.current_url
+    print('正在翻页|现在第', currentPageNumber,'页')
     try:
         html = browser.page_source
         soup = BeautifulSoup(html,'lxml')
@@ -114,7 +118,7 @@ def next_page(keyword,pageNumber,productType):
             submit = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#pagnNextString')))
             submit.click()
             wait.until(EC.text_to_be_present_in_element(
-                (By.CSS_SELECTOR, '.pagnCur'), str(pageNumber)))
+                (By.CSS_SELECTOR, '.pagnCur'), str(currentPageNumber)))
         # TODO:Wants to add support for see more mode
         # BUG-why 不能用soup.find('span',class_='a-button-text') == 'See more'作为if的条件 
         elif soup.find('span',class_='a-button-text'):
@@ -124,21 +128,30 @@ def next_page(keyword,pageNumber,productType):
 
         # https://www.amazon.com/s/ref=sr_pg_10?fst=p90x%3A1&rh=n%3A1055398%2Cn%3A1063252%2Cn%3A1063270%2Ck%3Amattress+game&page=10&keywords=mattress+game&ie=UTF8&qid=1523543196
         # https://www.amazon.com/s/ref=sr_pg_11?fst=p90x%3A1&rh=n%3A1055398%2Cn%3A1063252%2Cn%3A1063270%2Ck%3Amattress+game&page=11&keywords=mattress+game&ie=UTF8&qid=1523543097 
-        get_products_title_index(keyword,pageNumber,productType)
+        get_products_title_index(keyword,currentPageNumber,productType)
         
-        return 'More than 8 pages'
+        return 'More than 10 pages'
         
         """ 位置测试 （测试环境- Google Chrome）
         # 测试发现 除了广告位会变动外
         # 自然位的不会变动 一切匹配
         # 运行正常"""
-    except TimeoutException:
-        print('except')
-        next_page(keyword,pageNumber,productType)
+    except Exception as err:
+        print('Err!',err)
+        # Get current page number in case the page turned but still use the old current page value
+        """html = browser.page_source
+        soup = BeautifulSoup(html,'lxml')
+        currentPageNumber = int(soup.find('span',class_='pagnCur').get_text()) 
+        next_page(keyword,currentPageNumber,productType)"""
+        # 如果出现跳转失败 那么重新打开当前网页继续上次的工作
+        browser.get(currentPageLink)
+        os.system('say "Errors occured. Watch it, wait you 5 seconds."')
+        time.sleep(5)
+        next_page(keyword,currentPageNumber,productType)
 
 # BUG-Fixedstring indices must be integers
 # 因为转换rank前product为[] 什么都没有 
-def get_products_title_index(keyword,pageNumber,productType):
+def get_products_title_index(keyword,currentPageNumber,productType):
     try:
         html = browser.page_source
         soup = BeautifulSoup(html, 'lxml')
@@ -176,7 +189,7 @@ def get_products_title_index(keyword,pageNumber,productType):
                         # 是那种非产品的缺少s-access-title的，就默认给个title
                         'title': item.find(class_='s-access-title').get_text() if item.find(class_='s-access-title') else "Amazon recommendation", 
                         'index': index+1,# 在一页里的顺位序号，每一页都会变
-                        # 'rank': getRank(pageNumber,index),# 就算有那种AD也是准的，不影响
+                        # 'rank': getRank(currentPageNumber,index),# 就算有那种AD也是准的，不影响
                     }
                 # Sleep bag的那种see more模式
                 # BUG-每次点击see more按钮 那么content会累加相当于第一页加第二页以此类推
@@ -185,7 +198,7 @@ def get_products_title_index(keyword,pageNumber,productType):
                         #'title': item.find(class_='vs-carousel-title').get_text() if item.find(class_='vs-carousel-title') else "Amazon recommendation", 
                         'title': 'See more mode',
                         'index': index+1,# 在一页里的顺位序号，每一页都会变
-                        # 'rank': getRank(pageNumber,index),# 就算有那种AD也是准的，不影响
+                        # 'rank': getRank(currentPageNumber,index),# 就算有那种AD也是准的，不影响
                     } 
                     print('See more mode is on.')
                 # 其他没见过的模式
@@ -193,7 +206,7 @@ def get_products_title_index(keyword,pageNumber,productType):
                     product = {
                         'title': 'Other mode!', 
                         'index': index+1,# 在一页里的顺位序号，每一页都会变
-                        # 'rank': getRank(pageNumber,index),# 就算有那种AD也是准的，不影响
+                        # 'rank': getRank(currentPageNumber,index),# 就算有那种AD也是准的，不影响
                     } 
                     print('I do not recognize this mode, so I can not get the title from the product, please check!')
                 products.append(product)
@@ -203,7 +216,7 @@ def get_products_title_index(keyword,pageNumber,productType):
                 # Generate Rank attr for product
                 # 至少按每页转换 因为不同页可能排列模式不一样
                 # TODO：这里是按每个产品来 显得有点多余（有空修改下)
-                turnProductIndexToRank(product,pageNumber)
+                turnProductIndexToRank(product,currentPageNumber)
                 # When to stop
                 if len(adProducts)>=1 and len(nonAdProducts)>=1:
                     break 
@@ -277,7 +290,7 @@ def getThatTwo(productType):
 
 # BUG-有时会出现一页超过15-20行的情况
 # 按页来处理Rank
-def turnProductIndexToRank(product,pageNumber):
+def turnProductIndexToRank(product,currentPageNumber):
     try:
         # Make the soup
         html = browser.page_source
@@ -292,12 +305,12 @@ def turnProductIndexToRank(product,pageNumber):
             # 都是3列 
             if soup.find('div',class_='s-image-layout-picker'):
                 if productIndex <= 3:
-                    product['rank'] = str(pageNumber)+"."+"1"+"."+str(productIndex)
+                    product['rank'] = str(currentPageNumber)+"."+"1"+"."+str(productIndex)
                 # 3的倍数    
                 elif productIndex%3 ==0:
-                    product['rank'] = str(pageNumber)+"."+str(int(productIndex/3))+"."+"3"
+                    product['rank'] = str(currentPageNumber)+"."+str(int(productIndex/3))+"."+"3"
                 else:
-                    product['rank'] = str(pageNumber)+"."+str(int(productIndex//3 + 1))+"."+str(productIndex%3)
+                    product['rank'] = str(currentPageNumber)+"."+str(int(productIndex//3 + 1))+"."+str(productIndex%3)
             # 剩下的就是列模式了
             # 1_列模式可翻页的那种模式
             # 如:https://www.amazon.com/s/ref=nb_sb_noss_2?url=search-alias%3Daps&field-keywords=tv&rh=i%3Aaps%2Ck%3Atv&ajr=0
@@ -305,7 +318,7 @@ def turnProductIndexToRank(product,pageNumber):
         elif soup.find('div',class_='s-list-layout-picker'):
             #print('可转换型列模式')
             if soup.find('div',class_='s-image-layout-picker'):
-                product['rank'] =  str(pageNumber)+'.'+str(productIndex)
+                product['rank'] =  str(currentPageNumber)+'.'+str(productIndex)
         # 列
         # https://www.amazon.com/s?field-keywords=sleeping+bag
         elif not soup.find('div',class_='s-list-layout-picker'):
@@ -315,7 +328,7 @@ def turnProductIndexToRank(product,pageNumber):
                     if soup.find('span',id='pagnNextString'):
                         #os.system('say "Maybe it is a coloum mode, please check"')
                         #print("Maybe it is a coloum mode, please check,Check please!!!")
-                        product['rank'] =  str(pageNumber)+'.'+str(productIndex)
+                        product['rank'] =  str(currentPageNumber)+'.'+str(productIndex)
                         #print("product rank:",product['rank'])
         else:
             # 2_see more的那种像厕纸一样的中间分页的那种没有翻页的那种列模式
@@ -523,18 +536,24 @@ def main():
         # -----END------
 
         for keywordIndex,keyword in enumerate(keywords):
-            # Reset pageNumber when keyword changed
-            pageNumber = 1
-            search(keyword,pageNumber,productType)
+            currentPageNumber = 1
+            search(keyword,currentPageNumber,productType)
             # Display only the first N pages
-            for pageNumber in range(2, 10):
+            while currentPageNumber < 10:
+                # Get current page number
+                html = browser.page_source
+                soup = BeautifulSoup(html,'lxml')
+                currentPageNumber = int(soup.find('span',class_='pagnCur').get_text()) 
+                #print(currentPageNumber)
                 # When to stop turnning page
                 if len(adProducts)>=1 and len(nonAdProducts)>=1:
                     break
                 else:
-                    howmanypages = next_page(keyword,pageNumber,productType)
-                # 搜索结果少于8页则提前停止
-                print("Now is page",pageNumber)
+                    #print('before curr:',currentPageNumber)
+                    howmanypages = next_page(keyword,currentPageNumber+1,productType)
+                    #print('after page:',currentPageNumber)
+                # 搜索结果少于10页则提前停止
+                print("Now is page",currentPageNumber)
                 if howmanypages == 'Reach last page':
                     break
             # 得到最靠前的一个自然和广告位
