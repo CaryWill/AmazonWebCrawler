@@ -132,11 +132,6 @@ def next_page(keyword,currentPageNumber,productType):
         get_products_title_index(keyword,currentPageNumber,productType)
         
         return 'More than 10 pages'
-        
-        """ 位置测试 （测试环境- Google Chrome）
-        # 测试发现 除了广告位会变动外
-        # 自然位的不会变动 一切匹配
-        # 运行正常"""
     except Exception as err:
         print('Err!',err)
         # Get current page number in case the page turned but still use the old current page value
@@ -513,11 +508,11 @@ def main():
         # ----开始----
         # 自定义部分
         # 参数部分
-        keywords = ['mattress pad','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
-        productType = 'jmcl'
-        #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
+        #keywords = ['mattress pad','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
+        #productType = 'jmcl'
+        keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
         #keywords = ['waterproof mattress protector']
-        #productType = 'fscl'
+        productType = 'fscl'
         #keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
         #keywords = ['yoga mat']
         #keywords = ['tpe yoga mat']
@@ -554,7 +549,6 @@ def main():
                     howmanypages = next_page(keyword,currentPageNumber+1,productType)
                     #print('after page:',currentPageNumber)
                 # 搜索结果少于10页则提前停止
-                print("Now is page",currentPageNumber)
                 if howmanypages == 'Reach last page':
                     break
             # 得到最靠前的一个自然和广告位
