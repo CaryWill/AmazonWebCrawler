@@ -528,20 +528,23 @@ def main():
         startTime = datetime.now()
         print("Start at:",startTime)
 
-        # ----开始----
-        # 自定义部分
-        # 参数部分
+        # -----------------------开始-----------------------
+        
+        # 夹棉床笠
         #keywords = ['mattress pad','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
         #productType = 'jmcl'
-        #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
         
-        #keywords = ['mattress cover']
+        # 防水床笠
+        #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
         #productType = 'fscl'
+        
+        # 瑜伽垫
         keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
-        #keywords = ['yoga mat']
-        #keywords = ['tpe yoga mat']
         productType = 'yogamat'
-        #keywords = ['mattress pad']
+        
+        # -----------------------结束-------------------------
+
+        # 表格预设部分
         # 表格部分-第一列 Old format
         """wb.active.cell(1,1,'PC')
         wb.active.cell(2,1,str(datetime.today()))"""
@@ -555,8 +558,7 @@ def main():
             wb.active.append(['排名',getBestSellersRank('https://www.amazon.com/BLC-Anti-Tear-lightweight-Anti-slip-Pink-Purple/dp/B071HXNPYR/ref=sr_1_4?ie=UTF8&qid=1523959875&sr=8-4&keywords=tpe+fitness+yoga+mat')])
         else:
             wb.active.append(['排名','未处理排名错误'])
-        # -----END------
-
+        # 真正工作的部分
         for keywordIndex,keyword in enumerate(keywords):
             currentPageNumber = 1
             search(keyword,currentPageNumber,productType)
