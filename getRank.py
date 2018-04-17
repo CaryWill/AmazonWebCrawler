@@ -442,7 +442,7 @@ def saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural):
         print('Save Rank failed:', err)   
         wb.save("关键词位置统计"+str(datetime.now())+".xlsx")  
 # Modified format Save rank to excel
-def saveRankToExcelNewFormat(keyword,keywordIndex,firstAd_N_firstNatural):
+def saveRankToExcelNewFormat(productType,keyword,keywordIndex,firstAd_N_firstNatural):
     try:
         # 自然
         wb.active.cell(keywordIndex+3,1,keyword)
@@ -453,7 +453,7 @@ def saveRankToExcelNewFormat(keyword,keywordIndex,firstAd_N_firstNatural):
         wb.active.cell(keywordIndex+11,2,firstAd_N_firstNatural[1])
     except Exception as err:
         print('Save rank in new format failed!',err)
-        wb.save('关键词位置'+str(datetime.today())+'.xlsx')
+        wb.save(productType+'关键词位置'+str(datetime.today())+'.xlsx')
 # Manual
 def getFeature_bullets(productURL):
     browser.get(productURL)
@@ -513,12 +513,12 @@ def main():
         #productType = 'jmcl'
         #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
         
-        keywords = ['mattress cover']
-        productType = 'fscl'
-        #keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
+        #keywords = ['mattress cover']
+        #productType = 'fscl'
+        keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
         #keywords = ['yoga mat']
         #keywords = ['tpe yoga mat']
-        #productType = 'yogamat'
+        productType = 'yogamat'
         #keywords = ['mattress pad']
         # 表格部分-第一列 Old format
         """wb.active.cell(1,1,'PC')
@@ -537,9 +537,8 @@ def main():
             currentPageNumber = 1
             search(keyword,currentPageNumber,productType)
             # Display only the first N pages
-            while currentPageNumber < 10:
-                print('before turning page:',currentPageNumber) 
-                #print(currentPageNumber)
+            while currentPageNumber < 10: # Fetch first 10 pages
+                #print('before turning page:',currentPageNumber) 
                 # When to stop turnning page
                 if len(adProducts)>=1 and len(nonAdProducts)>=1:
                     break
@@ -558,7 +557,7 @@ def main():
             # 得到最靠前的一个自然和广告位
             firstAd_N_firstNatural = getThatTwo(productType)
             # 一个关键词储存一次
-            saveRankToExcelNewFormat(keyword,keywordIndex,firstAd_N_firstNatural)
+            saveRankToExcelNewFormat(productType,keyword,keywordIndex,firstAd_N_firstNatural)
             """print('ad',adProducts)
             print('nonad',nonAdProducts)
             print('products',products)"""

@@ -1,10 +1,6 @@
-pagenumber = 0
-def exceptionTest(pagenumber):
-    try:
-        
-    except:
-        print(pagenumber)
-        exceptionTest(pagenumber)
-def main():
-    for i in range(1,10):
-        exceptionTest(i)
+text = '#88 in Computers & Accessories (See top 100) '
+end = text.find('in')
+start = 0
+print(end)
+print(text[start:end])
+print(len(text[start:end]))
