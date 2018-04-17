@@ -120,7 +120,7 @@ def next_page(keyword,currentPageNumber,productType):
             submit.click()
             wait.until(EC.text_to_be_present_in_element(
                 (By.CSS_SELECTOR, '.pagnCur'), str(currentPageNumber)))
-        # TODO:Wants to add support for see more mode
+        # TODO: pytadd support for see more mode
         # BUG-why 不能用soup.find('span',class_='a-button-text') == 'See more'作为if的条件 
         elif soup.find('span',class_='a-button-text'):
             # print('See more mode!',soup.find('span',class_='a-button-text').get_text())
@@ -440,7 +440,7 @@ def saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural):
         print('Saved')
     except Exception as err:
         print('Save Rank failed:', err)   
-        wb.save("关键词位置统计"+str(datetime.now())+".xlsx")  
+        wb.save("关键词位置统计"+str(datetime.now().strftime('%Y-%m-%d'))+".xlsx")  
 # Modified format Save rank to excel
 def saveRankToExcelNewFormat(productType,keyword,keywordIndex,firstAd_N_firstNatural):
     try:
@@ -453,7 +453,7 @@ def saveRankToExcelNewFormat(productType,keyword,keywordIndex,firstAd_N_firstNat
         wb.active.cell(keywordIndex+11,2,firstAd_N_firstNatural[1])
     except Exception as err:
         print('Save rank in new format failed!',err)
-        wb.save(productType+'关键词位置'+str(datetime.today())+'.xlsx')
+        wb.save(productType+'关键词位置'+str(datetime.now().strftime('%Y-%m-%d'))+'.xlsx')
 # Manual
 def getFeature_bullets(productURL):
     browser.get(productURL)
@@ -515,20 +515,22 @@ def main():
         
         #keywords = ['mattress cover']
         #productType = 'fscl'
-        keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
+        #keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
         #keywords = ['yoga mat']
-        #keywords = ['tpe yoga mat']
+        keywords = ['tpe yoga mat']
         productType = 'yogamat'
         #keywords = ['mattress pad']
         # 表格部分-第一列 Old format
         """wb.active.cell(1,1,'PC')
         wb.active.cell(2,1,str(datetime.today()))"""
         # New format
-        wb.active.append(['日期',str(startTime)])
+        wb.active.append(['日期',str(startTime.strftime('%Y-%m-%d %H:%M'))])
         if productType == 'jmcl':
             wb.active.append(['排名',getBestSellersRank('https://www.amazon.com/Maevis-Mattress-Cotton-Overfilled-Alternative/dp/B073F8WXN2/ref=sr_1_31?s=bedbath&ie=UTF8&qid=1523866269&sr=1-31&keywords=mattress+pad')])
         elif productType == 'fscl':
             wb.active.append(['排名',getBestSellersRank('https://www.amazon.com/Maevis-Waterproof-Mattress-Protector-Washable/dp/B073SSD95M/ref=sr_1_30?s=bedbath&ie=UTF8&qid=1523866591&sr=1-30&keywords=waterproof+mattress+protector')])
+        elif productType == 'yogamat':
+            wb.active.append(['排名',getBestSellersRank('https://www.amazon.com/BLC-Anti-Tear-lightweight-Anti-slip-Pink-Purple/dp/B071HXNPYR/ref=sr_1_4?ie=UTF8&qid=1523959875&sr=8-4&keywords=tpe+fitness+yoga+mat')])
         else:
             wb.active.append(['排名','未处理排名错误'])
         # -----END------
@@ -571,22 +573,17 @@ def main():
         print("Ends at:",endTime)
         elapsed = endTime - startTime
         print("Used:",elapsed)
-        wb.save('关键词位置'+str(datetime.today())+'.xlsx')
+        wb.save(productType+'关键词位置'+str(datetime.now().strftime('%Y-%m-%d'))+'.xlsx')
     except Exception as err:
         print('出错啦', err)
         endTime = datetime.now()
         print("Ends at:",endTime)
-        # wb.save("关键词位置统计.xlsx")
         elapsed = endTime - startTime
         print("Used:",elapsed)
     finally:
         browser.quit()
         # Debug mode
         #pass
-# BUG-有的界面没有那个九宫格显示模式，怎么强制切换。
-# TODO:添加一个处理总时
-# TODO:保存一个条目时保存一下
-# TODO:'NoneType' object has no attribute 'get_text' 处理下 排查下
 if __name__ == '__main__':
     main()
    # testMuti_valueMatch('https://www.amazon.com/LEISURE-TOWN-Overfilled-Pocket-Cooling-Alternative/dp/B073TZF8BL/ref=sr_1_1_sspa?s=bedbath&ie=UTF8&qid=1523794551&sr=1-1-spons&keywords=mattress+pad&psc=1')
@@ -594,13 +591,3 @@ if __name__ == '__main__':
    # getBestSellersRank('https://www.amazon.com/Maevis-Mattress-Cotton-Overfilled-Alternative/dp/B073F8WXN2/ref=sr_1_31?s=bedbath&ie=UTF8&qid=1523866269&sr=1-31&keywords=mattress+pad')
     # 防水
     #getBestSellersRank('https://www.amazon.com/Maevis-Waterproof-Mattress-Protector-Washable/dp/B073SSD95M/ref=sr_1_30?s=bedbath&ie=UTF8&qid=1523866591&sr=1-30&keywords=waterproof+mattress+protector')
-# BUG-出错啦 Message: Timeout loading page after 300000ms
-# BUG-Fixed不能在这里退出浏览器 不然不能搜其他的产品连接了
-# browser.quit()
-# 注意Openpyxl添加行时.append([])要添加一个list
-# .append()是添加一个单元格
-
-# TODO:sleeping bag这种Rank如何计算
-# Not the normal 3 modes
-# 增加进度条 不然不知道是不是卡住了
-# 非正常的3行模式product的提取方式也不一样
