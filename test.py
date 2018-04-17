@@ -5,9 +5,14 @@ print(end)
 print(text[start:end])
 print(len(text[start:end]))
 """
-
+"""
 from datetime import datetime, date, time
 import time
 
 today = datetime.today().strftime('%Y-%m-%d %H:%M')
-print(today)
+print(today)"""
+
+import re
+s = "question-Tx1LEA4LND264M0"
+s1=re.search(r'question-\w*',s)
+print(s1)

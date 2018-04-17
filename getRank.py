@@ -494,7 +494,29 @@ def testMuti_valueMatch(productURL):
     soup = BeautifulSoup(html,'lxml') 
     tagss = soup.select('div.celwidget.aplus-module.3p-module-b')
     print('many,',len(tagss))
-    
+
+def getAnsweredQuestionCount(soup):
+    try:
+        answeredQuestionCountTag = soup.find('a', id="askATFLink")
+        # If it's a new release product it may not have Q&A
+        answeredQuestionCount = answeredQuestionCountTag.span.get_text().strip() if answeredQuestionCountTag else "0"
+        # Compatible with excel
+        answeredQuestionCount = answeredQuestionCount.replace(' answered questions','')
+        return answeredQuestionCount
+    except Exception as err:
+        print("Get Q&A failed", err)
+
+def getQ_N_A_Details(productURL):
+    browser.get(productURL)
+    html = browser.page_source
+    soup = BeautifulSoup(html,'lxml') 
+    # BUG-本来想用css selector来匹配多值的 但是不知道为什么不起做用 就来find也没有 find_all也是
+    if getAnsweredQuestionCount(soup) != '0':
+        #QTag = soup.find_all(id=re.compile(r'question-\w*'))
+        QTag = soup.find('body')
+        wb.active.cell(1,1,QTag.string)
+        wb.save('test.xlsx')
+        
 # Title with Rank
 def main():
     try:
@@ -515,9 +537,9 @@ def main():
         
         #keywords = ['mattress cover']
         #productType = 'fscl'
-        #keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
+        keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
         #keywords = ['yoga mat']
-        keywords = ['tpe yoga mat']
+        #keywords = ['tpe yoga mat']
         productType = 'yogamat'
         #keywords = ['mattress pad']
         # 表格部分-第一列 Old format
@@ -585,9 +607,10 @@ def main():
         # Debug mode
         #pass
 if __name__ == '__main__':
+    #getQ_N_A_Details('https://www.amazon.com/LEISURE-TOWN-Overfilled-Pocket-Cooling-Alternative/dp/B073TZF8BL/ref=sr_1_1_sspa?s=bedbath&ie=UTF8&qid=1523962225&sr=1-1-spons&keywords=mattress+pad&psc=1')
     main()
-   # testMuti_valueMatch('https://www.amazon.com/LEISURE-TOWN-Overfilled-Pocket-Cooling-Alternative/dp/B073TZF8BL/ref=sr_1_1_sspa?s=bedbath&ie=UTF8&qid=1523794551&sr=1-1-spons&keywords=mattress+pad&psc=1')
-   #夹棉
-   # getBestSellersRank('https://www.amazon.com/Maevis-Mattress-Cotton-Overfilled-Alternative/dp/B073F8WXN2/ref=sr_1_31?s=bedbath&ie=UTF8&qid=1523866269&sr=1-31&keywords=mattress+pad')
+    # testMuti_valueMatch('https://www.amazon.com/LEISURE-TOWN-Overfilled-Pocket-Cooling-Alternative/dp/B073TZF8BL/ref=sr_1_1_sspa?s=bedbath&ie=UTF8&qid=1523794551&sr=1-1-spons&keywords=mattress+pad&psc=1')
+    #夹棉
+    # getBestSellersRank('https://www.amazon.com/Maevis-Mattress-Cotton-Overfilled-Alternative/dp/B073F8WXN2/ref=sr_1_31?s=bedbath&ie=UTF8&qid=1523866269&sr=1-31&keywords=mattress+pad')
     # 防水
     #getBestSellersRank('https://www.amazon.com/Maevis-Waterproof-Mattress-Protector-Washable/dp/B073SSD95M/ref=sr_1_30?s=bedbath&ie=UTF8&qid=1523866591&sr=1-30&keywords=waterproof+mattress+protector')
