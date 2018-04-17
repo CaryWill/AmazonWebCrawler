@@ -87,6 +87,7 @@ def search(keyword,currentPageNumber,productType):
         submit.click()
         get_products_title_index(keyword,currentPageNumber,productType)
     except TimeoutException:
+        # Now if error occurs it can resume it's work
         browser.get(currentPageLink)
         return search(keyword,currentPageNumber,productType)
 
