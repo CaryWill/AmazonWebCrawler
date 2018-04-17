@@ -248,11 +248,11 @@ def getThatTwo(productType):
         if productType == 'yogamat':
             productType = yogamat
         # 临时变量
-        targetAdRank = ''
-        targetAdAttr = ''
-        targetNonAdRank = ''
-        targetNonAdAttr = ''
-        unifiedRankAndAttr = ''
+        targetAdRank = '大于10页'
+        targetAdAttr = '广告'
+        targetNonAdRank = '大于10页'
+        targetNonAdAttr = '自然'
+        #unifiedRankAndAttr = ''
         # 对最靠前的自然和广告位进行处理
         if len(adProducts) != 0:
             targetAdRank = adProducts[0]['rank']
@@ -261,14 +261,17 @@ def getThatTwo(productType):
         if len(nonAdProducts) != 0:
             targetNonAdRank = str(nonAdProducts[0]['rank'])
             targetNonAdAttr = productType[nonAdProducts[0]['title'].strip()] + '自然'
-        # 整合 - 以 ’广告/自然‘ 为顺
+        # 旧方案
+        """# 整合 - 以 ’广告/自然‘ 为顺
         unifiedRankAndAttr = targetAdRank+'('+targetAdAttr+')'+'/'+targetNonAdRank+'('+targetNonAdAttr+')'
         # 如果在前8页搜不到自家产品则设置为默认位
         if unifiedRankAndAttr == "()/()":
-            unifiedRankAndAttr = '大于8页'
+            unifiedRankAndAttr = '大于8页'"""
+        # 新格式
+        return [targetNonAdRank+'('+targetNonAdAttr+')',targetAdRank+'('+targetAdAttr+')'] 
         # 打印第一个广告和自然搜索的位置
-        print("Two:",unifiedRankAndAttr)
-        return unifiedRankAndAttr
+        #print("Two:",unifiedRankAndAttr)
+        #return unifiedRankAndAttr
     except Exception as err:
         print("Get that two err:",err)
 
@@ -330,7 +333,7 @@ def turnProductIndexToRank(product,pageNumber):
         print("Convert to rank err:",err)
 
 def getBestSellersRank(productURL):
-    startTime = datetime.now()
+    #startTime = datetime.now()
     browser.get(productURL)
     html = browser.page_source
     soup = BeautifulSoup(html,'lxml')
@@ -412,8 +415,9 @@ def getBestSellersRank(productURL):
     for s in bestSellerRankSequences:
         bestSellerRankString += (s+'|')
     print(bestSellerRankString)
-    endTime = datetime.now()
-    print('Used:',endTime-startTime)
+    #endTime = datetime.now()
+    #print('Used:',endTime-startTime)
+    return bestSellerRankString
         
 # Save Rank to Excel
 def saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural):
@@ -428,7 +432,18 @@ def saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural):
     except Exception as err:
         print('Save Rank failed:', err)   
         wb.save("关键词位置统计"+str(datetime.now())+".xlsx")  
-
+# Modified format Save rank to excel
+def saveRankToExcelNewFormat(keyword,keywordIndex,firstAd_N_firstNatural):
+    try:
+        # 自然
+        wb.active.cell(keywordIndex+3,1,keyword)
+        wb.active.cell(keywordIndex+3,2,firstAd_N_firstNatural[0])
+        # 广告
+        wb.active.cell(keywordIndex+11,1,keyword)
+        wb.active.cell(keywordIndex+11,2,firstAd_N_firstNatural[1])
+    except Exception as err:
+        print('Save rank in new format failed!',err)
+        wb.save('关键词位置'+str(datetime.today())+'.xlsx')
 # Manual
 def getFeature_bullets(productURL):
     browser.get(productURL)
@@ -484,19 +499,27 @@ def main():
         # ----开始----
         # 自定义部分
         # 参数部分
-        #keywords = ['mattress pad','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
-        #productType = 'jmcl'
+        keywords = ['mattress pad','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
+        productType = 'jmcl'
         #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
         #keywords = ['waterproof mattress protector']
         #productType = 'fscl'
-        keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
-        #keywords = ['yoga']
+        #keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
+        #keywords = ['yoga mat']
         #keywords = ['tpe yoga mat']
-        productType = 'yogamat'
+        #productType = 'yogamat'
         #keywords = ['mattress pad']
-        # 表格部分-第一列
-        wb.active.cell(1,1,'PC')
-        wb.active.cell(2,1,str(datetime.today()))
+        # 表格部分-第一列 Old format
+        """wb.active.cell(1,1,'PC')
+        wb.active.cell(2,1,str(datetime.today()))"""
+        # New format
+        wb.active.append(['日期',str(startTime)])
+        if productType == 'jmcl':
+            wb.active.append(['排名',getBestSellersRank('https://www.amazon.com/Maevis-Mattress-Cotton-Overfilled-Alternative/dp/B073F8WXN2/ref=sr_1_31?s=bedbath&ie=UTF8&qid=1523866269&sr=1-31&keywords=mattress+pad')])
+        elif productType == 'fscl':
+            wb.active.append(['排名',getBestSellersRank('https://www.amazon.com/Maevis-Waterproof-Mattress-Protector-Washable/dp/B073SSD95M/ref=sr_1_30?s=bedbath&ie=UTF8&qid=1523866591&sr=1-30&keywords=waterproof+mattress+protector')])
+        else:
+            wb.active.append(['排名','未处理排名错误'])
         # -----END------
 
         for keywordIndex,keyword in enumerate(keywords):
@@ -504,7 +527,7 @@ def main():
             pageNumber = 1
             search(keyword,pageNumber,productType)
             # Display only the first N pages
-            for pageNumber in range(2, 8):
+            for pageNumber in range(2, 10):
                 # When to stop turnning page
                 if len(adProducts)>=1 and len(nonAdProducts)>=1:
                     break
@@ -517,7 +540,10 @@ def main():
             # 得到最靠前的一个自然和广告位
             firstAd_N_firstNatural = getThatTwo(productType)
             # 一个关键词储存一次
-            saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural)
+            saveRankToExcelNewFormat(keyword,keywordIndex,firstAd_N_firstNatural)
+            """print('ad',adProducts)
+            print('nonad',nonAdProducts)
+            print('products',products)"""
             # 进行搜索下一个关键词前的准备：
             # 重置一些全局变量当搜索关键词每次变得时候
             products = []
@@ -528,6 +554,7 @@ def main():
         print("Ends at:",endTime)
         elapsed = endTime - startTime
         print("Used:",elapsed)
+        wb.save('关键词位置'+str(datetime.today())+'.xlsx')
     except Exception as err:
         print('出错啦', err)
         endTime = datetime.now()
@@ -544,10 +571,12 @@ def main():
 # TODO:保存一个条目时保存一下
 # TODO:'NoneType' object has no attribute 'get_text' 处理下 排查下
 if __name__ == '__main__':
-    #main()
-    testMuti_valueMatch('https://www.amazon.com/LEISURE-TOWN-Overfilled-Pocket-Cooling-Alternative/dp/B073TZF8BL/ref=sr_1_1_sspa?s=bedbath&ie=UTF8&qid=1523794551&sr=1-1-spons&keywords=mattress+pad&psc=1')
-    
-
+    main()
+   # testMuti_valueMatch('https://www.amazon.com/LEISURE-TOWN-Overfilled-Pocket-Cooling-Alternative/dp/B073TZF8BL/ref=sr_1_1_sspa?s=bedbath&ie=UTF8&qid=1523794551&sr=1-1-spons&keywords=mattress+pad&psc=1')
+   #夹棉
+   # getBestSellersRank('https://www.amazon.com/Maevis-Mattress-Cotton-Overfilled-Alternative/dp/B073F8WXN2/ref=sr_1_31?s=bedbath&ie=UTF8&qid=1523866269&sr=1-31&keywords=mattress+pad')
+    # 防水
+    #getBestSellersRank('https://www.amazon.com/Maevis-Waterproof-Mattress-Protector-Washable/dp/B073SSD95M/ref=sr_1_30?s=bedbath&ie=UTF8&qid=1523866591&sr=1-30&keywords=waterproof+mattress+protector')
 # BUG-出错啦 Message: Timeout loading page after 300000ms
 # BUG-Fixed不能在这里退出浏览器 不然不能搜其他的产品连接了
 # browser.quit()

@@ -190,7 +190,8 @@ def save(products,ws,wb,wbName):
 def main():
     try:
         products = []
-        newReleaseURL = 'https://www.amazon.com/gp/new-releases/home-garden/10671048011/ref=zg_bs_tab_t_bsnr'
+        #newReleaseURL = 'https://www.amazon.com/gp/new-releases/home-garden/10671048011/ref=zg_bs_tab_t_bsnr'
+        newReleaseURL = 'https://www.amazon.com/gp/new-releases/home-garden/3732781/ref=zg_bs_tab_t_bsnr'
         getStockNumber(newReleaseURL,products)
     except Exception as err:
         print('Err on main:',err)
