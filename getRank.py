@@ -442,15 +442,14 @@ def saveRankToExcel(keyword,keywordIndex,firstAd_N_firstNatural):
         print('Save Rank failed:', err)   
         wb.save("关键词位置统计"+str(datetime.now().strftime('%Y-%m-%d'))+".xlsx")  
 # Modified format Save rank to excel
-def saveRankToExcelNewFormat(productType,keyword,keywordIndex,firstAd_N_firstNatural):
+def saveRankToExcelNewFormat(productType,keyword,keywordIndex,firstAd_N_firstNatural,keywords):
     try:
         # 自然
         wb.active.cell(keywordIndex+3,1,keyword)
         wb.active.cell(keywordIndex+3,2,firstAd_N_firstNatural[0])
         # 广告
-        # TODO: 注意此处加11 可以动态的用len(keywords) 不然关键词多于8个的话 这里就会出现数据覆盖
-        wb.active.cell(keywordIndex+11,1,keyword)
-        wb.active.cell(keywordIndex+11,2,firstAd_N_firstNatural[1])
+        wb.active.cell(keywordIndex+len(keywords)+3,1,keyword)
+        wb.active.cell(keywordIndex+len(keywords)+3,2,firstAd_N_firstNatural[1])
     except Exception as err:
         print('Save rank in new format failed!',err)
         wb.save(productType+'关键词位置'+str(datetime.now().strftime('%Y-%m-%d'))+'.xlsx')
@@ -532,15 +531,15 @@ def main():
         
         # 夹棉床笠
         #keywords = ['mattress pad','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
-        #productType = 'jmcl'
+        productType = 'jmcl'
         
         # 防水床笠
         #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
         #productType = 'fscl'
         
         # 瑜伽垫
-        keywords = ['tpe yoga mat','yoga mat','yoga','workout mat','fitness mat','tpe fitness yoga mat']
-        productType = 'yogamat'
+        #keywords = ['tpe yoga mat','yoga mat','yoga','tpe fitness yoga mat']
+        #productType = 'yogamat'
         
         # -----------------------结束-------------------------
 
@@ -583,7 +582,7 @@ def main():
             # 得到最靠前的一个自然和广告位
             firstAd_N_firstNatural = getThatTwo(productType)
             # 一个关键词储存一次
-            saveRankToExcelNewFormat(productType,keyword,keywordIndex,firstAd_N_firstNatural)
+            saveRankToExcelNewFormat(productType,keyword,keywordIndex,firstAd_N_firstNatural,keywords)
             """print('ad',adProducts)
             print('nonad',nonAdProducts)
             print('products',products)"""
@@ -604,6 +603,7 @@ def main():
         print("Ends at:",endTime)
         elapsed = endTime - startTime
         print("Used:",elapsed)
+        wb.save(productType+'关键词位置'+str(datetime.now().strftime('%Y-%m-%d'))+'.xlsx')
     finally:
         browser.quit()
         # Debug mode
