@@ -505,17 +505,14 @@ def getAnsweredQuestionCount(soup):
     except Exception as err:
         print("Get Q&A failed", err)
 
-def getQ_N_A_Details(productURL):
-    browser.get(productURL)
-    html = browser.page_source
-    soup = BeautifulSoup(html,'lxml') 
+def getQ_N_A_Details(soup):
     # BUG-本来想用css selector来匹配多值的 但是不知道为什么不起做用 就来find也没有 find_all也是
     if getAnsweredQuestionCount(soup) != '0':
         #QTag = soup.find_all(id=re.compile(r'question-\w*'))
         QTag = soup.find('body')
         wb.active.cell(1,1,QTag.string)
         wb.save('test.xlsx')
-        
+
 # Title with Rank
 def main():
     try:
@@ -531,11 +528,11 @@ def main():
         
         # 夹棉床笠
         #keywords = ['mattress pad','queen mattress pad','mattress topper','queen mattress topper','twin mattress pad','king mattress pad','mattress cover','mattress pad cover']
-        productType = 'jmcl'
+        #productType = 'jmcl'
         
         # 防水床笠
-        #keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
-        #productType = 'fscl'
+        keywords = ['mattress protector','waterproof mattress protector','queen mattress protector','king mattress protector','waterproof mattress pad','mattress cover']
+        productType = 'fscl'
         
         # 瑜伽垫
         #keywords = ['tpe yoga mat','yoga mat','yoga','tpe fitness yoga mat']
@@ -548,7 +545,7 @@ def main():
         """wb.active.cell(1,1,'PC')
         wb.active.cell(2,1,str(datetime.today()))"""
         # New format
-        wb.active.append(['日期',str(startTime.strftime('%Y-%m-%d %H:%M'))])
+        wb.active.append(['日期',str(startTime.strftime('%Y-%m-%d %H:%M:%S'))])
         if productType == 'jmcl':
             wb.active.append(['排名',getBestSellersRank('https://www.amazon.com/Maevis-Mattress-Cotton-Overfilled-Alternative/dp/B073F8WXN2/ref=sr_1_31?s=bedbath&ie=UTF8&qid=1523866269&sr=1-31&keywords=mattress+pad')])
         elif productType == 'fscl':
